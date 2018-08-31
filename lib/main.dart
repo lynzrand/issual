@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import './style.dart';
 
 void main() => runApp(new MyApp());
 
@@ -9,7 +10,7 @@ class MyApp extends StatelessWidget {
     return new MaterialApp(
       title: 'Issual',
       theme: new ThemeData(
-        primarySwatch: Colors.red,
+        primarySwatch: IssualColors.primary,
       ),
       home: new MyHomePage(title: 'Issual'),
     );
@@ -35,36 +36,74 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  // void _incrementCounter() {
-  //   setState(() {
-  //     // This call to setState tells the Flutter framework that something has
-  //     // changed in this State, which causes it to rerun the build method below
-  //     // so that the display can reflect the updated values. If we changed
-  //     // _counter without calling setState(), then the build method would not be
-  //     // called again, and so nothing would appear to happen.
-  //     _counter++;
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
         appBar: new AppBar(
           title: new Text(widget.title),
-          backgroundColor: Colors.transparent,
-          elevation: 0.0,
         ),
-        body: new ListView(
-          // child: new Row(
-          children: [
-            new Card(
-              child: new Text('data'),
-            ),
+        body: new Column(
+          children: <Widget>[
+            new TodoCard(
+              title: "Todos",
+            )
           ],
-          // ),
         ),
-        endDrawer: new Drawer(child: new Text("data")));
+        drawer: new Drawer(child: new Text("data")));
+  }
+}
+
+class TodoCard extends StatefulWidget {
+  TodoCard({Key key, this.title}) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => new _TodoCardState();
+
+  String title;
+}
+
+class _TodoCardState extends State<TodoCard> {
+  @override
+  Widget build(BuildContext context) {
+    return new Card(
+      margin: EdgeInsets.all(16.0),
+      child: new Column(
+        children: <Widget>[
+          new Padding(
+            padding: new EdgeInsets.fromLTRB(24.0, 0.0, 0.0, 0.0),
+            child: new Row(
+              children: <Widget>[
+                new Expanded(
+                    child: new Text(
+                  '${widget.title}',
+                  style: new TextStyle(
+                      color: new Color(0xff0000ff),
+                      fontWeight: FontWeight.w300,
+                      fontSize: 24.0),
+                )),
+                new IconButton(
+                  icon: new Icon(Icons.expand_less),
+                  onPressed: null,
+                ),
+              ],
+            ),
+          ),
+          //,
+          new Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              // new IconButton(
+              //   icon: new Icon(Icons.add),
+              //   onPressed: null,
+              // )
+              new FlatButton(
+                child: new Text("Add".toUpperCase()),
+                onPressed: () => {},
+              )
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

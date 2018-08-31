@@ -1,12 +1,11 @@
 import 'package:sqflite/sqflite.dart';
 
 class Filerw {
-  Filerw(){
-  }
-  
-  init() async{
-    this._path = await getDatabasesPath()
-  }
+  Filerw();
 
-  String _path;
+  // String _path;
+
+  void init() async {
+    // this._path = await getDatabasesPath()
+  }
 }
