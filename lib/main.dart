@@ -39,6 +39,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool foundEasterEgg = false;
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -50,18 +52,38 @@ class _MyHomePageState extends State<MyHomePage> {
           // debugPrint(t.toString());
           if (t is UserScrollNotification) {
             double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
-                widget.homeScrlCtrl.position.viewportDimension;
+                widget.homeScrlCtrl.position.viewportDimension +
+                48;
             double offset = widget.homeScrlCtrl.offset;
-            debugPrint('Notification at $offset; To match: $toScroll');
+            // debugPrint('Notification at $offset; To match: $toScroll');
             if (toScroll < offset &&
-                offset != widget.homeScrlCtrl.position.maxScrollExtent) {
+                widget.homeScrlCtrl.position.maxScrollExtent - offset >=
+                    120.0) {
               widget.homeScrlCtrl.animateTo(
                 toScroll,
                 duration: new Duration(milliseconds: 400),
                 curve: Curves.easeOut,
               );
               debugPrint('Hiding Scroll fired @$offset');
+              setState(() {
+                foundEasterEgg = false;
+              });
               return true;
+            } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset <
+                    120.0 &&
+                widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
+              widget.homeScrlCtrl.animateTo(
+                widget.homeScrlCtrl.position.maxScrollExtent,
+                duration: new Duration(milliseconds: 150),
+                curve: Curves.easeOut,
+              );
+              setState(() {
+                foundEasterEgg = true;
+              });
+            } else {
+              setState(() {
+                foundEasterEgg = false;
+              });
             }
           }
         },
@@ -106,7 +128,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 alignment: Alignment.center,
                 padding: EdgeInsets.all(16.0),
                 child: new Text(
-                  "That's all. What are you expecting?",
+                  foundEasterEgg
+                      ? "You found an Easter Egg!"
+                      : "That's all. What are you expecting?",
                   style: new TextStyle(
                     color: new Color(0xffffffff),
                   ),
