@@ -22,11 +22,27 @@ class Todo {
   /// Deadline of the todo.
   DateTime ddl;
 
-  Todo({final Map<String, dynamic> rawTodo, bool isNewTodo = false}) {
-    if (isNewTodo && (rawTodo == null || rawTodo['id'] == null))
+  Todo({Map<String, dynamic> rawTodo, bool isNewTodo = false}) {
+    rawTodo ??= new Map<String, dynamic>();
+
+    if (isNewTodo || rawTodo['id'] == null)
       this.id = new Ulid().toCanonical();
     else
       this.id = rawTodo['id'];
+  }
+
+  void changeState(TodoState state) {
+    this.state = state;
+  }
+
+  Map<String, dynamic> toMap() {
+    var map = new Map<String, dynamic>();
+    map['id'] = this.id;
+    map['title'] = this.title;
+    map['desc'] = this.desc;
+    map['ddl'] = this.ddl;
+    map['state'] = this.state.toString();
+    return map;
   }
 }
 
@@ -38,7 +54,10 @@ class Filerw {
   String _path;
   Database _db;
 
-  void init() async {
+  Database getdb() => this._db;
+  void debugSetDb(Database db) => this._db = db;
+
+  Future<void> init() async {
     this._path = await getDatabasesPath() + "todo.db";
     this._db = await openDatabase(this._path, onCreate: (Database db, int v) {
       db.execute('''
@@ -106,7 +125,36 @@ class Filerw {
 
     // execute!
     num = Sqflite.firstIntValue(await this._db.rawQuery(query));
-
+    num ??= 0;
     return num;
+  }
+
+  void addTodo(Todo todo, Batch bat) {
+    bat.insert('Todolist', todo.toMap());
+  }
+
+  /// Post one or more Todos into database
+  Future<bool> postTodo({
+    Todo todo,
+    List<Todo> todoList,
+    Map<String, Todo> todoMap,
+  }) async {
+    if (todo == null && todoList == null && todoMap == null)
+      throw (new Exception(
+          'You must call this method with at least one Todo object!'));
+    Batch bat = this._db.batch();
+
+    if (todo != null) {
+      this.addTodo(todo, bat);
+    }
+    if (todoList != null) {
+      for (Todo oneTodo in todoList) this.addTodo(oneTodo, bat);
+    }
+    if (todoMap != null) {
+      for (String todoMapKey in todoMap.keys)
+        this.addTodo(todoMap[todoMapKey], bat);
+    }
+
+    await bat.commit(noResult: true);
   }
 }

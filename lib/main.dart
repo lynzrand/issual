@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_driver/driver_extension.dart';
+import 'filerw.dart';
 import 'dart:math';
 import './style.dart';
 
-void main() => runApp(new MyApp());
+void main() {
+  enableFlutterDriverExtension();
+
+  runApp(new MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -41,6 +47,49 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   bool foundEasterEgg = false;
 
+  bool _notificationHandler(Notification t) {
+    // debugPrint(t.toString());
+    if (t is UserScrollNotification) {
+      double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
+          widget.homeScrlCtrl.position.viewportDimension +
+          48;
+      double offset = widget.homeScrlCtrl.offset;
+      // debugPrint('Notification at $offset; To match: $toScroll');
+      if (toScroll < offset &&
+          widget.homeScrlCtrl.position.maxScrollExtent - offset >= 120.0) {
+        widget.homeScrlCtrl.animateTo(
+          toScroll,
+          duration: new Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+        debugPrint('Hiding Scroll fired @$offset');
+        setState(() {
+          foundEasterEgg = false;
+        });
+        return true;
+      } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset <
+              120.0 &&
+          widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
+        widget.homeScrlCtrl.animateTo(
+          widget.homeScrlCtrl.position.maxScrollExtent,
+          duration: new Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
+        setState(() {
+          foundEasterEgg = true;
+        });
+      } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset == 0) {
+        setState(() {
+          foundEasterEgg = true;
+        });
+      } else {
+        setState(() {
+          foundEasterEgg = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -48,63 +97,19 @@ class _MyHomePageState extends State<MyHomePage> {
       //   title: new Text(widget.title),
       // ),
       body: new NotificationListener(
-        onNotification: (Notification t) {
-          // debugPrint(t.toString());
-          if (t is UserScrollNotification) {
-            double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
-                widget.homeScrlCtrl.position.viewportDimension +
-                48;
-            double offset = widget.homeScrlCtrl.offset;
-            // debugPrint('Notification at $offset; To match: $toScroll');
-            if (toScroll < offset &&
-                widget.homeScrlCtrl.position.maxScrollExtent - offset >=
-                    120.0) {
-              widget.homeScrlCtrl.animateTo(
-                toScroll,
-                duration: new Duration(milliseconds: 400),
-                curve: Curves.easeOut,
-              );
-              debugPrint('Hiding Scroll fired @$offset');
-              setState(() {
-                foundEasterEgg = false;
-              });
-              return true;
-            } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset <
-                    120.0 &&
-                widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
-              widget.homeScrlCtrl.animateTo(
-                widget.homeScrlCtrl.position.maxScrollExtent,
-                duration: new Duration(milliseconds: 150),
-                curve: Curves.easeOut,
-              );
-              setState(() {
-                foundEasterEgg = true;
-              });
-            } else {
-              setState(() {
-                foundEasterEgg = false;
-              });
-            }
-          }
-        },
+        onNotification: _notificationHandler,
         child: new CustomScrollView(
           slivers: <Widget>[
-            new SliverFillViewport(
-                delegate:
-                    SliverChildBuilderDelegate((BuildContext ctx, int index) {
-              return Container(
-                  child: new Column(
-                    children: <Widget>[
-                      new Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: <Text>[const Text("15"), const Text("Open")],
-                      )
-                    ],
-                  ),
-                  alignment: Alignment.center);
-            }, childCount: 1)),
             new SliverAppBar(
               pinned: true,
+              expandedHeight: 360.0,
+              flexibleSpace: new FlexibleSpaceBar(
+                background: Container(
+                  child: new Text("data"),
+                  alignment: Alignment.center,
+                ),
+                title: new Text('issual/Todos'),
+              ),
               actions: <Widget>[
                 new IconButton(
                   icon: Icon(Icons.eject),
@@ -164,7 +169,7 @@ class TodoCard extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => new _TodoCardState();
 
-  String title;
+  final String title;
 }
 
 class _TodoCardState extends State<TodoCard> {
@@ -193,7 +198,7 @@ class _TodoCardState extends State<TodoCard> {
               ],
             ),
           ),
-          //,
+          new Column(),
           new Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
@@ -209,6 +214,22 @@ class _TodoCardState extends State<TodoCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class TodoListItem extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    new _TodoListItemState();
+  }
+}
+
+class _TodoListItemState extends State<TodoListItem> {
+  @override
+  Widget build(BuildContext context) {
+    return new InkWell(
+      child: new Row(),
     );
   }
 }
