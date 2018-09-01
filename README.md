@@ -2,7 +2,18 @@
 
 A Todo Manager with nothing special.
 
-## 
+## Usage
 
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+To build,
+
+```sh
+$ flutter build apk
+```
+
+To test,
+
+```sh
+$ flutter run
+```
+
+## For more documentation please view the [/docs](docs/readme.md)

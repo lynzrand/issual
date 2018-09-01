@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:math';
 import './style.dart';
 
 void main() => runApp(new MyApp());
@@ -30,6 +32,7 @@ class MyHomePage extends StatefulWidget {
   // always marked "final".
 
   final String title;
+  ScrollController homeScrlCtrl = new ScrollController();
 
   @override
   _MyHomePageState createState() => new _MyHomePageState();
@@ -39,17 +42,95 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: new AppBar(
-          title: new Text(widget.title),
-        ),
-        body: new Column(
-          children: <Widget>[
-            new TodoCard(
-              title: "Todos",
-            )
+      // appBar: new AppBar(
+      //   title: new Text(widget.title),
+      // ),
+      body: new NotificationListener(
+        onNotification: (Notification t) {
+          // debugPrint(t.toString());
+          if (t is UserScrollNotification) {
+            double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
+                widget.homeScrlCtrl.position.viewportDimension;
+            double offset = widget.homeScrlCtrl.offset;
+            debugPrint('Notification at $offset; To match: $toScroll');
+            if (toScroll < offset &&
+                offset != widget.homeScrlCtrl.position.maxScrollExtent) {
+              widget.homeScrlCtrl.animateTo(
+                toScroll,
+                duration: new Duration(milliseconds: 400),
+                curve: Curves.easeOut,
+              );
+              debugPrint('Hiding Scroll fired @$offset');
+              return true;
+            }
+          }
+        },
+        child: new CustomScrollView(
+          slivers: <Widget>[
+            new SliverFillViewport(
+                delegate:
+                    SliverChildBuilderDelegate((BuildContext ctx, int index) {
+              return Container(
+                  child: new Column(
+                    children: <Widget>[
+                      new Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: <Text>[const Text("15"), const Text("Open")],
+                      )
+                    ],
+                  ),
+                  alignment: Alignment.center);
+            }, childCount: 1)),
+            new SliverAppBar(
+              pinned: true,
+              actions: <Widget>[
+                new IconButton(
+                  icon: Icon(Icons.eject),
+                  onPressed: () {},
+                )
+              ],
+            ),
+            new SliverList(
+              delegate:
+                  new SliverChildBuilderDelegate((BuildContext ctx, int index) {
+                if (index < 10)
+                  return new TodoCard(
+                    title: "Card $index",
+                  );
+                else
+                  return null;
+              }, childCount: 10),
+            ),
+            new SliverFillRemaining(
+              child: new Container(
+                alignment: Alignment.center,
+                padding: EdgeInsets.all(16.0),
+                child: new Text(
+                  "That's all. What are you expecting?",
+                  style: new TextStyle(
+                    color: new Color(0xffffffff),
+                  ),
+                ),
+              ),
+            ),
           ],
+          controller: widget.homeScrlCtrl,
         ),
-        drawer: new Drawer(child: new Text("data")));
+        // new Column(
+        //   children: <Widget>[
+        //     new TodoCard(
+        //       title: "Todos",
+        //     )
+        //   ],
+        // ),
+      ),
+      backgroundColor: Colors.blueGrey.shade500,
+      drawer: new Drawer(
+        child: new Text(
+          "data",
+        ),
+      ),
+    );
   }
 }
 
@@ -66,7 +147,7 @@ class _TodoCardState extends State<TodoCard> {
   @override
   Widget build(BuildContext context) {
     return new Card(
-      margin: EdgeInsets.all(16.0),
+      margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: new Column(
         children: <Widget>[
           new Padding(
