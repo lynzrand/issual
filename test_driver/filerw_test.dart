@@ -28,7 +28,7 @@ void main() {
 
       Todo sampleTodo1 = new Todo(rawTodo: {
         'title': 'Todo1',
-        'state': TodoState.Active,
+        'state': 'active',
         'desc': 'Todo Desc 1',
         'ddl': new DateTime(2018, 9, 1, 12, 0, 0),
       }, isNewTodo: true);

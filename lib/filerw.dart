@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:ulid/ulid.dart';
 
-enum TodoState { Open, Closed, Active, Pending, Finished }
+// enum TodoState { open, closed, active, pending, disabled }
 
 class Todo {
   /// Unique identifier of the todo
@@ -14,7 +14,8 @@ class Todo {
   String title;
 
   /// State of the todo. Avaliable: Open, Closed, Active, Pending, Finished.
-  TodoState state;
+  // TodoState state;
+  String state;
 
   /// Description of the todo. (I wish it is) Markdown compatible.
   String desc;
@@ -29,9 +30,13 @@ class Todo {
       this.id = new Ulid().toCanonical();
     else
       this.id = rawTodo['id'];
+
+    this.title = rawTodo['title'];
+    this.state = rawTodo['state'];
+    this.desc = rawTodo['desc'];
   }
 
-  void changeState(TodoState state) {
+  void changeState(String state) {
     this.state = state;
   }
 
@@ -47,12 +52,17 @@ class Todo {
 }
 
 class Filerw {
-  Filerw() {
+  Filerw({bool debug}) {
     debugPrint('[FileRW] Use Filerw.init() to initialize database');
+    if (debug)
+      this._debug = true;
+    else
+      this._debug = false;
   }
 
   String _path;
   Database _db;
+  bool _debug;
 
   Database getdb() => this._db;
   void debugSetDb(Database db) => this._db = db;
@@ -79,14 +89,13 @@ class Filerw {
 
   /// Get Todos within 3 monts OR is active
   Future<Map<String, Todo>> getRecentTodos() async {
-    String startID = new Ulid(
-            millis: DateTime.now()
-                .subtract(new Duration(days: 92))
-                .microsecondsSinceEpoch)
-        .toCanonical()
-        .replaceRange(10, 25, '0' * 16);
-    List<dynamic> rawTodos = await this._db.query('Todolist',
-        where: 'id > $startID OR state == "Active" OR state == "Pending"');
+    String startID =
+        new Ulid(millis: DateTime.now().subtract(new Duration(days: 92)).microsecondsSinceEpoch)
+            .toCanonical()
+            .replaceRange(10, 25, '0' * 16);
+    List<dynamic> rawTodos = await this
+        ._db
+        .query('Todolist', where: 'id > $startID OR state == "Active" OR state == "Pending"');
     Map<String, Todo> todos;
     for (var rawTodo in rawTodos) {
       Todo todo = new Todo(rawTodo: rawTodo);
@@ -96,10 +105,7 @@ class Filerw {
   }
 
   Future<int> countTodos(
-      {TodoState state,
-      String category,
-      DateTime beforeTime,
-      DateTime afterTime}) async {
+      {String state, String category, DateTime beforeTime, DateTime afterTime}) async {
     int num = 0;
     // Count todos
     String query = 'SELECT COUNT(*) FROM Todolist WHERE 0 == 0';
@@ -140,8 +146,7 @@ class Filerw {
     Map<String, Todo> todoMap,
   }) async {
     if (todo == null && todoList == null && todoMap == null)
-      throw (new Exception(
-          'You must call this method with at least one Todo object!'));
+      throw (new Exception('You must call this method with at least one Todo object!'));
     Batch bat = this._db.batch();
 
     if (todo != null) {
@@ -151,8 +156,7 @@ class Filerw {
       for (Todo oneTodo in todoList) this.addTodo(oneTodo, bat);
     }
     if (todoMap != null) {
-      for (String todoMapKey in todoMap.keys)
-        this.addTodo(todoMap[todoMapKey], bat);
+      for (String todoMapKey in todoMap.keys) this.addTodo(todoMap[todoMapKey], bat);
     }
 
     await bat.commit(noResult: true);

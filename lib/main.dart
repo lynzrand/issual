@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_driver/driver_extension.dart';
 import 'filerw.dart';
 import 'dart:math';
 import './style.dart';
 
 void main() {
-  enableFlutterDriverExtension();
-
   runApp(new MyApp());
 }
 
@@ -28,15 +25,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
   ScrollController homeScrlCtrl = new ScrollController();
 
@@ -55,11 +43,23 @@ class _MyHomePageState extends State<MyHomePage> {
           48;
       double offset = widget.homeScrlCtrl.offset;
       // debugPrint('Notification at $offset; To match: $toScroll');
-      if (toScroll < offset &&
-          widget.homeScrlCtrl.position.maxScrollExtent - offset >= 120.0) {
+      /* 
+       * FIXME: The following assertion was thrown while handling a gesture:
+       * 'package:flutter/src/widgets/scrollable.dart': Failed assertion: 
+       * line 445 pos 12: '_hold == null': is not true.
+       * 
+       * TODO: replace this with ScrollPhysics if possible!
+       * Note: This bug DOES NOT affect release versions of the app.
+       * 
+       * An issue has already been posted on Github at 
+       * https://github.com/flutter/flutter/issues/14452. 
+       * No official fixes has been released though.
+       * USE WITH CAUTION!
+       */
+      if (toScroll < offset && widget.homeScrlCtrl.position.maxScrollExtent - offset >= 120.0) {
         widget.homeScrlCtrl.animateTo(
           toScroll,
-          duration: new Duration(milliseconds: 400),
+          duration: new Duration(milliseconds: 120),
           curve: Curves.easeOut,
         );
         debugPrint('Hiding Scroll fired @$offset');
@@ -67,12 +67,11 @@ class _MyHomePageState extends State<MyHomePage> {
           foundEasterEgg = false;
         });
         return true;
-      } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset <
-              120.0 &&
+      } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset < 120.0 &&
           widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
         widget.homeScrlCtrl.animateTo(
           widget.homeScrlCtrl.position.maxScrollExtent,
-          duration: new Duration(milliseconds: 150),
+          duration: new Duration(milliseconds: 50),
           curve: Curves.easeOut,
         );
         setState(() {
@@ -105,6 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
               expandedHeight: 360.0,
               flexibleSpace: new FlexibleSpaceBar(
                 background: Container(
+                  // TODO: show real data!
                   child: new Text("data"),
                   alignment: Alignment.center,
                 ),
@@ -118,20 +118,21 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
             new SliverList(
-              delegate:
-                  new SliverChildBuilderDelegate((BuildContext ctx, int index) {
+              delegate: new SliverChildBuilderDelegate((BuildContext ctx, int index) {
+                // TODO: show REAL todos!
                 if (index < 10)
                   return new TodoCard(
                     title: "Card $index",
                   );
                 else
                   return null;
-              }, childCount: 10),
+              }, childCount: 2),
             ),
             new SliverFillRemaining(
               child: new Container(
                 alignment: Alignment.center,
                 padding: EdgeInsets.all(16.0),
+                // TODO: show REAL easter eggs!
                 child: new Text(
                   foundEasterEgg
                       ? "You found an Easter Egg!"
@@ -187,9 +188,7 @@ class _TodoCardState extends State<TodoCard> {
                     child: new Text(
                   '${widget.title}',
                   style: new TextStyle(
-                      color: new Color(0xff0000ff),
-                      fontWeight: FontWeight.w300,
-                      fontSize: 24.0),
+                      color: new Color(0xff0000ff), fontWeight: FontWeight.w300, fontSize: 24.0),
                 )),
                 new IconButton(
                   icon: new Icon(Icons.expand_less),
@@ -198,9 +197,12 @@ class _TodoCardState extends State<TodoCard> {
               ],
             ),
           ),
-          new Column(),
-          new Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          new Column(
+            children: [
+              new TodoListItem(new Todo(rawTodo: {'title': 'Test'}))
+            ],
+          ),
+          new ButtonBar(
             children: <Widget>[
               // new IconButton(
               //   icon: new Icon(Icons.add),
@@ -219,17 +221,48 @@ class _TodoCardState extends State<TodoCard> {
 }
 
 class TodoListItem extends StatefulWidget {
+  TodoListItem(final this.todo);
+  final stateIcons = <String, IconData>{
+    'open': Icons.error_outline,
+    'closed': Icons.check_circle_outline,
+    'pending': Icons.access_time,
+    'active': Icons.data_usage,
+    'disabled': Icons.remove_circle_outline,
+  };
+  final Todo todo;
+
   @override
   State<StatefulWidget> createState() {
-    new _TodoListItemState();
+    return new _TodoListItemState();
   }
 }
 
 class _TodoListItemState extends State<TodoListItem> {
+  // TodoState state;
+  String state;
+
   @override
   Widget build(BuildContext context) {
-    return new InkWell(
-      child: new Row(),
+    return new Dismissible(
+      key: Key(widget.todo.id),
+      child: new InkWell(
+        splashColor: IssualColors.darkColorRipple,
+        onTap: () => {},
+        child: new Row(
+          children: <Widget>[
+            new IconButton(
+              // FIXME: Icon does not show up
+              icon: new Icon(widget.stateIcons[state.toString() ?? 'closed']),
+              onPressed: () => {},
+            ),
+            new Expanded(child: Text(this.widget.todo.title)),
+            new IconButton(
+              icon: new Icon(Icons.more_horiz),
+              onPressed: () => {},
+            )
+          ],
+        ),
+      ),
     );
   }
 }
