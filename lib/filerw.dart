@@ -39,6 +39,7 @@ class Todo {
     this.title = rawTodo['title'];
     this.state = rawTodo['state'];
     this.desc = rawTodo['desc'];
+    debugPrint('[Todo] Creating new Todo out of ${rawTodo.toString()}');
   }
 
   void changeState(String state) {
@@ -52,7 +53,7 @@ class Todo {
     map['desc'] = this.desc;
     map['ddl'] = this.ddl;
     map['state'] = this.state.toString();
-    debugPrint('ToMap called on Todo $id');
+    // debugPrint('ToMap called on Todo $id');
     return map;
   }
 }
@@ -80,51 +81,50 @@ class Filerw {
   }
 
   Future<void> init({bool deleteCurrentDatabase = false}) async {
+    // Yeah I know this is deprecated but it is the only way dude =x=
+    await Sqflite.devSetDebugModeOn(true);
+
     debugPrint('$_filerwLogPrefix FileRW initialization start.');
     var path = await getDatabasesPath();
     this._path = join(path, "todo.db");
+
     if (deleteCurrentDatabase) deleteDatabase(this._path);
     debugPrint('$_filerwLogPrefix Database path: ${this._path}');
-    this._db = await openDatabase(
-      this._path,
-      version: 1,
-      onCreate: (Database db, int v) async {
-        debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
-        await db.transaction((txn) async {
-          await txn.execute(
-              'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT )');
-        });
-        Todo sampleTodo1 = new Todo(rawTodo: {
-          'title': 'Todo1',
-          'state': 'active',
-          'desc': 'Todo Desc 1',
-          'ddl': new DateTime(2018, 9, 1, 12, 0, 0),
-        }, isNewTodo: true);
-        await postTodo(todo: sampleTodo1);
-      },
-    );
+
+    this._db = await openDatabase(this._path, version: 1, onCreate: (Database db, int v) async {
+      debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
+      await db.transaction((txn) async {
+        await txn.execute(
+            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT )');
+      });
+    });
     debugPrint('$_filerwLogPrefix FileRW initialized at ${this._path}.');
+
     int entries = await this.countTodos();
     debugPrint('$_filerwLogPrefix This database has $entries entries');
     this._initialized = true;
   }
 
   /// Get Todos within 3 monts OR is active
-  Future<Map<String, Todo>> getRecentTodos() async {
+  Future<List<Todo>> getRecentTodos() async {
     // Check initialization status
     if (!this._initialized) this._askForInitialization();
+    debugPrint('$_filerwLogPrefix Getting Recent Todos');
     String startID =
         new Ulid(millis: DateTime.now().subtract(new Duration(days: 92)).microsecondsSinceEpoch)
             .toCanonical()
             .replaceRange(10, 25, '0' * 16);
-    List<dynamic> rawTodos = await this._db.query(todolistTableName,
-        where: 'id > $startID OR state == "Active" OR state == "Pending"',
-        columns: ['id', 'title', 'state', 'ddl', 'tags']);
-    Map<String, Todo> todos;
-    for (var rawTodo in rawTodos) {
-      Todo todo = new Todo(rawTodo: rawTodo);
-      todos[todo.id] = todo;
+    List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
+        where: '"id" > ? OR "state" == ? OR "state" == ?',
+        whereArgs: [startID, 'active', 'pending'],
+        // columns: ['id', 'title', 'state', 'ddl', 'tags'],
+        limit: 90);
+    // List<Todo> todos = rawTodos.map<Todo>((rawTodo) => new Todo(rawTodo: rawTodo));
+    List<Todo> todos = [];
+    for (Map<String, dynamic> todo in rawTodos) {
+      todos.add(new Todo(rawTodo: todo));
     }
+    debugPrint(todos.toString());
     return todos;
   }
 

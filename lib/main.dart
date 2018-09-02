@@ -37,14 +37,19 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   _MyHomePageState() {
     this._rw = new Filerw();
-    this
-        ._rw
-        .init(deleteCurrentDatabase: true)
-        .then((_) => this.setState(() => this._rwInitialized = true));
+    this._rw.init().then(this.init);
   }
+  Future<void> init(_) {
+    _rw.getRecentTodos().then((List<Todo> todosGot) => setState(() {
+          this._rwInitialized = true;
+          this.displayedTodos = todosGot;
+        }));
+  }
+
   bool foundEasterEgg = false;
   Filerw _rw;
   bool _rwInitialized = false;
+  List<Todo> displayedTodos = [];
 
   /// Handles ALL notifications bubbling up the app.
   /// TODO: Intercept some notifications midway if needed.
@@ -104,28 +109,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
     // TODO: show REAL todos!
-    if (index < 10)
-      return new TodoCard(
-        title: "Card $index",
-      );
-    else
-      return null;
+    return new TodoCard(
+      title: 'Todo Card',
+      todos: displayedTodos,
+    );
   }
 
 // UI
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      // appBar: new AppBar(
-      //   title: new Text(widget.title),
-      // ),
       body: new NotificationListener(
         onNotification: _notificationHandler,
         child: new CustomScrollView(
           slivers: <Widget>[
             new IssualAppBar(_rwInitialized),
+            new SliverToBoxAdapter(
+              child: new Container(
+                child: new Card(
+                  margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: new Column(
+                    children: <Widget>[
+                      new ListTile(
+                        title: Text('Database Loaded: $_rwInitialized'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             new SliverList(
-              delegate: new SliverChildBuilderDelegate(this._buildTodoCard, childCount: 2),
+              delegate: new SliverChildBuilderDelegate(this._buildTodoCard, childCount: 1),
             ),
             new SliverFillRemaining(
               child: new Container(
@@ -159,6 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
           "data",
         ),
       ),
+      floatingActionButton: new IssualFAB(),
     );
   }
 }
@@ -182,7 +197,6 @@ class _IssualAppBarState extends State<IssualAppBar> {
       flexibleSpace: new FlexibleSpaceBar(
         background: Container(
           // TODO: show real data!
-          child: new Text("database loaded: ${widget.databaseLoaded}"),
           alignment: Alignment.center,
         ),
         title: new Text('issual/all_todos'),
@@ -191,8 +205,6 @@ class _IssualAppBarState extends State<IssualAppBar> {
         new IconButton(
           icon: Icon(Icons.search),
           onPressed: () {
-            // Scaffold.of(context)
-            //     .showSnackBar(SnackBar(content: new Text('You clicked the search button!')));
             Navigator.push(context, MaterialPageRoute(builder: (context) => IssualSearchScreen()));
           },
         )
@@ -202,12 +214,13 @@ class _IssualAppBarState extends State<IssualAppBar> {
 }
 
 class TodoCard extends StatefulWidget {
-  TodoCard({Key key, this.title}) : super(key: key);
+  TodoCard({Key key, this.title, this.todos}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => new _TodoCardState();
 
   final String title;
+  final List<Todo> todos;
 }
 
 class _TodoCardState extends State<TodoCard> {
@@ -235,9 +248,9 @@ class _TodoCardState extends State<TodoCard> {
             ),
           ),
           new Column(
-            children: [
-              new TodoListItem(new Todo(rawTodo: {'title': 'Test'}))
-            ],
+            children: List.generate(widget.todos.length, (int index) {
+              return new TodoListItem(widget.todos[index]);
+            }),
           ),
           new ButtonBar(
             children: <Widget>[
@@ -274,6 +287,22 @@ class TodoListItem extends StatefulWidget {
   }
 }
 
+class IssualFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new FloatingActionButton(
+      child: new Icon(Icons.add),
+      onPressed: () {
+        Scaffold.of(context).showSnackBar(
+          SnackBar(
+            content: new Text('Filerw.AddTodo() not implemented'),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _TodoListItemState extends State<TodoListItem> {
   // TodoState state;
   String state;
@@ -289,10 +318,28 @@ class _TodoListItemState extends State<TodoListItem> {
           children: <Widget>[
             new IconButton(
               // FIXME: Icon does not show up
-              icon: new Icon(widget.stateIcons[state.toString() ?? 'closed']),
+              icon: new Icon(widget.stateIcons[state ?? 'closed']),
               onPressed: () => {},
             ),
-            new Expanded(child: Text(this.widget.todo.title)),
+            new Expanded(
+              child:
+                  // TODO: Really, show tags?
+                  //
+                  // Column(
+                  //   crossAxisAlignment: CrossAxisAlignment.start,
+                  //   children: [
+                  new Text('#${this.widget.todo.id}: ${this.widget.todo.title}'),
+              // new Wrap(
+              //   children: <Widget>[
+              //     new Chip(
+              //       label: Text("Tag"),
+              //       labelPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: -2.0),
+              //     ),
+              //   ],
+              //   )
+              // ],
+              // ),
+            ),
             new IconButton(
               icon: new Icon(Icons.more_horiz),
               onPressed: () => {},

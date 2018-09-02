@@ -13,11 +13,9 @@ class IssualTodoView extends StatefulWidget {
 }
 
 class _IssualTodoViewState extends State<IssualTodoView> {
-  _IssualTodoViewState(String id) {
-  }
-  init(String id) async{
-    
-    this.mainTodo = await 
+  _IssualTodoViewState(String id) {}
+  init(String id) async {
+    // this.mainTodo = await
   }
   Todo mainTodo;
 
@@ -29,7 +27,7 @@ class _IssualTodoViewState extends State<IssualTodoView> {
       body: Column(
         children: [
           Hero(
-            child: Text(),
+            // child: Text(),
             tag: widget.id,
           ),
         ],
