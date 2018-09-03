@@ -217,4 +217,8 @@ class Filerw {
     }
     bat.commit();
   }
+
+  Future<void> updateTodo(String id, Todo newTodo) async {
+    await _db.update(todolistTableName, newTodo.toMap(), where: 'id == ?', whereArgs: [id]);
+  }
 }

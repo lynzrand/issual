@@ -123,6 +123,12 @@ class _MyHomePageState extends State<MyHomePage> {
         ///   closed, canceled => open
         case 'flip':
           // TODO: implement FLIP
+          Todo todo = t.data['todo'] as Todo;
+          this.setState(() {
+            displayedTodos[todo.category][t.data['index']].state = t.data['state'];
+          });
+          todo.state = t.data['state'];
+          _rw.updateTodo(todo.id, todo);
           break;
 
         /// ADD: add Todo in t.data to database
@@ -252,17 +258,12 @@ class _IssualAppBarState extends State<IssualAppBar> {
   }
 }
 
-class TodoCard extends StatefulWidget {
+class TodoCard extends StatelessWidget {
   TodoCard({Key key, this.title, this.todos}) : super(key: key);
-
-  @override
-  State<StatefulWidget> createState() => new _TodoCardState();
 
   final String title;
   final List<Todo> todos;
-}
 
-class _TodoCardState extends State<TodoCard> {
   @override
   Widget build(BuildContext context) {
     return new Card(
@@ -275,7 +276,7 @@ class _TodoCardState extends State<TodoCard> {
               children: <Widget>[
                 new Expanded(
                     child: new Text(
-                  '${widget.title}',
+                  '$title',
                   style: new TextStyle(
                       color: new Color(0xff0000ff), fontWeight: FontWeight.w300, fontSize: 24.0),
                 )),
@@ -287,8 +288,8 @@ class _TodoCardState extends State<TodoCard> {
             ),
           ),
           new Column(
-            children: List.generate(widget.todos.length, (int index) {
-              return new TodoListItem(widget.todos[index]);
+            children: List.generate(todos.length, (int index) {
+              return new TodoListItem(todos[index], index);
             }),
           ),
           new ButtonBar(
@@ -310,7 +311,7 @@ class _TodoCardState extends State<TodoCard> {
 }
 
 class TodoListItem extends StatefulWidget {
-  TodoListItem(final this.todo);
+  TodoListItem(final this.todo, this.index);
 
   // TODO: move this to filerw.dart/todo
   static const stateIcons = <String, IconData>{
@@ -318,9 +319,10 @@ class TodoListItem extends StatefulWidget {
     'closed': Icons.check_circle_outline,
     'pending': Icons.access_time,
     'active': Icons.data_usage,
-    'disabled': Icons.remove_circle_outline,
+    'canceled': Icons.remove_circle_outline,
   };
   final Todo todo;
+  final int index;
 
   @override
   State<StatefulWidget> createState() {
@@ -336,9 +338,7 @@ class _TodoListItemState extends State<TodoListItem> {
   Widget build(BuildContext context) {
     return new Dismissible(
       key: Key(widget.todo.id),
-      onDismissed: (DismissDirection dir) {
-        TodoStateChangeNotification(id: widget.todo.id, stateChange: 'flip').dispatch(context);
-      },
+      onDismissed: (DismissDirection dir) {},
       child: new InkWell(
         splashColor: IssualColors.darkColorRipple,
         // TODO: onTap: emit a notification up the tree!
@@ -350,9 +350,27 @@ class _TodoListItemState extends State<TodoListItem> {
         child: new Row(
           children: <Widget>[
             new IconButton(
-              icon: new Icon(TodoListItem.stateIcons[state ?? 'closed']),
-              onPressed: () => {},
-            ),
+                icon: new Icon(TodoListItem.stateIcons[state ?? 'closed']),
+                onPressed: () {
+                  switch (state) {
+                    case 'closed':
+                    case 'canceled':
+                      state = 'open';
+                      break;
+                    case 'active':
+                    case 'pending':
+                    case 'open':
+                    default:
+                      state = 'closed';
+                      break;
+                  }
+
+                  TodoStateChangeNotification(
+                    id: widget.todo.id,
+                    stateChange: 'flip',
+                    data: {'todo': widget.todo, 'index': widget.index, 'state': state},
+                  ).dispatch(context);
+                }),
             new Expanded(
               child:
                   // TODO: Really, show tags?
@@ -377,7 +395,9 @@ class _TodoListItemState extends State<TodoListItem> {
             ),
             new IconButton(
               icon: new Icon(Icons.more_horiz),
-              onPressed: () => {},
+              onPressed: () => new TodoStateChangeNotification(
+                      stateChange: 'flip', id: widget.todo.id, data: widget.todo)
+                  .dispatch(context),
             )
           ],
         ),
