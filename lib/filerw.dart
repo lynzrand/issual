@@ -56,6 +56,11 @@ class Todo {
     // debugPrint('ToMap called on Todo $id');
     return map;
   }
+
+  @override
+  String toString() {
+    return this.toMap().toString();
+  }
 }
 
 class Filerw {

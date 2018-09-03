@@ -317,7 +317,6 @@ class _TodoListItemState extends State<TodoListItem> {
         child: new Row(
           children: <Widget>[
             new IconButton(
-              // FIXME: Icon does not show up
               icon: new Icon(widget.stateIcons[state ?? 'closed']),
               onPressed: () => {},
             ),
