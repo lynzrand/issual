@@ -25,6 +25,9 @@ class Todo {
   /// Deadline of the todo.
   DateTime ddl;
 
+  /// Group / Category
+  String category;
+
   /// Tags
   List<String> tags;
 
@@ -39,6 +42,7 @@ class Todo {
     this.title = rawTodo['title'];
     this.state = rawTodo['state'];
     this.desc = rawTodo['desc'];
+    this.category = rawTodo['category'];
     debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
   }
 
@@ -52,23 +56,16 @@ class Todo {
     map['title'] = this.title;
     map['desc'] = this.desc;
     map['ddl'] = this.ddl;
-    map['state'] = this.state.toString();
+    map['category'] = this.category;
+    map['state'] = this.state;
     // debugPrint('ToMap called on Todo $id');
     return map;
   }
 }
 
 class Filerw {
-  Filerw({bool debug = false}) {
-    if (debug)
-      this._debug = true;
-    else
-      this._debug = false;
-  }
-
   String _path;
   Database _db;
-  bool _debug;
   bool _initialized = false;
 
   final String todolistTableName = 'Todolist';
@@ -91,12 +88,17 @@ class Filerw {
     if (deleteCurrentDatabase) deleteDatabase(this._path);
     debugPrint('$_filerwLogPrefix Database path: ${this._path}');
 
-    this._db = await openDatabase(this._path, version: 1, onCreate: (Database db, int v) async {
+    this._db = await openDatabase(this._path, version: 2, onCreate: (Database db, int v) async {
       debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
       await db.transaction((txn) async {
         await txn.execute(
             'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT )');
       });
+    }, onUpgrade: (Database db, int oldv, int newv) async {
+      if (oldv == 1 && newv == 2) {
+        await db.execute('ALTER TABLE $todolistTableName ADD COLUMN category TEXT');
+        await db.update(todolistTableName, {'category': 'todo'}, where: 'category IS NULL');
+      }
     });
     debugPrint('$_filerwLogPrefix FileRW initialized at ${this._path}.');
 
@@ -106,7 +108,7 @@ class Filerw {
   }
 
   /// Get Todos within 3 monts OR is active
-  Future<List<Todo>> getRecentTodos() async {
+  Future<Map<String, List<Todo>>> getRecentTodos() async {
     // Check initialization status
     if (!this._initialized) this._askForInitialization();
     debugPrint('$_filerwLogPrefix Getting Recent Todos');
@@ -117,12 +119,14 @@ class Filerw {
     List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
         where: '"id" > ? OR "state" == ? OR "state" == ?',
         whereArgs: [startID, 'active', 'pending'],
-        // columns: ['id', 'title', 'state', 'ddl', 'tags'],
-        limit: 90);
+        columns: ['id', 'title', 'state', 'ddl', 'tags', 'category'],
+        limit: 90,
+        orderBy: 'id DESC');
     // List<Todo> todos = rawTodos.map<Todo>((rawTodo) => new Todo(rawTodo: rawTodo));
-    List<Todo> todos = [];
+    Map<String, List<Todo>> todos = {};
     for (Map<String, dynamic> todo in rawTodos) {
-      todos.add(new Todo(rawTodo: todo));
+      if (todos[todo['category'].toString()] == null) todos[todo['category']] = [];
+      todos[todo['category']].add(new Todo(rawTodo: todo));
     }
     return todos;
   }

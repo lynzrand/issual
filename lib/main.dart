@@ -42,7 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
     this._rw.init().then(this.init);
   }
   void init(_) {
-    _rw.getRecentTodos().then((List<Todo> todosGot) {
+    _rw.getRecentTodos().then((Map<String, List<Todo>> todosGot) {
       setState(() {
         this._rwInitialized = true;
         this.displayedTodos = todosGot;
@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool foundEasterEgg = false;
   Filerw _rw;
   bool _rwInitialized = false;
-  List<Todo> displayedTodos = [];
+  Map<String, List<Todo>> displayedTodos = {};
 
   /// Handles ALL notifications bubbling up the app.
   /// TODO: Intercept some notifications midway if needed.
@@ -128,7 +128,8 @@ class _MyHomePageState extends State<MyHomePage> {
         /// ADD: add Todo in t.data to database
         case 'add':
           this.setState(() {
-            this.displayedTodos.add(t.data as Todo);
+            this.displayedTodos[t.data.category] ??= [];
+            this.displayedTodos[t.data.category].add(t.data as Todo);
           });
           _rw.postTodo(todo: t.data as Todo);
           break;
@@ -147,8 +148,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildTodoCard(BuildContext ctx, int index) {
     // TODO: show categorized todo cards
     return new TodoCard(
-      title: 'Todo Card',
-      todos: displayedTodos,
+      title: displayedTodos.keys.elementAt(index),
+      todos: displayedTodos[displayedTodos.keys.elementAt(index)],
     );
   }
 
@@ -176,7 +177,8 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             new SliverList(
-              delegate: new SliverChildBuilderDelegate(this._buildTodoCard, childCount: 1),
+              delegate: new SliverChildBuilderDelegate(this._buildTodoCard,
+                  childCount: displayedTodos.keys.length),
             ),
             new SliverFillRemaining(
               child: new Container(
@@ -390,6 +392,7 @@ class IssualFAB extends StatelessWidget {
     return new FloatingActionButton(
       child: new Icon(Icons.add),
       onPressed: () {
+        // TODO: implement REAL adding
         Scaffold.of(context).showSnackBar(
           SnackBar(
             // content: new Text('Filerw.AddTodo() not implemented'),
@@ -404,6 +407,7 @@ class IssualFAB extends StatelessWidget {
               rawTodo: {
                 'title': 'Test Todo',
                 'desc': 'DESC',
+                'category': ['todo', 'otherCategory', 'otherCategory2'][Random().nextInt(3)]
               },
             )).dispatch(context);
       },

@@ -5,4 +5,8 @@ class TodoStateChangeNotification extends Notification {
   final String id;
   final String stateChange;
   final dynamic data;
+
+  String toString() {
+    return 'TodoStateChangeNotification(id: $id, stateChange: $stateChange, data: ${data.toString()})';
+  }
 }
