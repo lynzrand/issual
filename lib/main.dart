@@ -5,6 +5,8 @@ import 'filerw.dart';
 import 'dart:math';
 import './style.dart';
 import './searchScreen.dart';
+import './todoView.dart';
+import './notifications.dart';
 
 void main() {
   runApp(new IssualHome());
@@ -84,7 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           foundEasterEgg = false;
         });
-        return true;
       } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset < 120.0 &&
           widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
         widget.homeScrlCtrl.animateTo(
@@ -95,6 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           foundEasterEgg = true;
         });
+        return true;
       } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset == 0) {
         setState(() {
           foundEasterEgg = true;
@@ -104,11 +106,38 @@ class _MyHomePageState extends State<MyHomePage> {
           foundEasterEgg = false;
         });
       }
+    } else if (t is TodoStateChangeNotification) {
+      switch (t.stateChange) {
+
+        /// FLIP: flip Todo's state
+        /// e.g.
+        ///   open, active, pending => closed
+        ///   closed, canceled => open
+        case 'flip':
+          // TODO: implement FLIP
+          break;
+
+        /// ADD: add Todo in t.data to database
+        case 'add':
+          this.setState(() {
+            this.displayedTodos.add(t.data as Todo);
+          });
+          _rw.postTodo(todo: t.data as Todo);
+          break;
+
+        /// VIEW: navigate to Todo whose id == t.id
+        case 'view':
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return new IssualTodoView(t.id, t.data as String, _rw);
+          }));
+          break;
+      }
+      return true;
     }
   }
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
-    // TODO: show REAL todos!
+    // TODO: show categorized todo cards
     return new TodoCard(
       title: 'Todo Card',
       todos: displayedTodos,
@@ -118,10 +147,10 @@ class _MyHomePageState extends State<MyHomePage> {
 // UI
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      body: new NotificationListener(
-        onNotification: _notificationHandler,
-        child: new CustomScrollView(
+    return new NotificationListener(
+      onNotification: _notificationHandler,
+      child: new Scaffold(
+        body: new CustomScrollView(
           slivers: <Widget>[
             new IssualAppBar(_rwInitialized),
             new SliverToBoxAdapter(
@@ -166,14 +195,14 @@ class _MyHomePageState extends State<MyHomePage> {
         //     )
         //   ],
         // ),
-      ),
-      backgroundColor: Colors.blueGrey.shade500,
-      drawer: new Drawer(
-        child: new Text(
-          "data",
+        backgroundColor: Colors.blueGrey.shade500,
+        drawer: new Drawer(
+          child: new Text(
+            "data",
+          ),
         ),
+        floatingActionButton: new IssualFAB(),
       ),
-      floatingActionButton: new IssualFAB(),
     );
   }
 }
@@ -272,7 +301,9 @@ class _TodoCardState extends State<TodoCard> {
 
 class TodoListItem extends StatefulWidget {
   TodoListItem(final this.todo);
-  final stateIcons = <String, IconData>{
+
+  // TODO: move this to filerw.dart/todo
+  static const stateIcons = <String, IconData>{
     'open': Icons.error_outline,
     'closed': Icons.check_circle_outline,
     'pending': Icons.access_time,
@@ -287,22 +318,6 @@ class TodoListItem extends StatefulWidget {
   }
 }
 
-class IssualFAB extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return new FloatingActionButton(
-      child: new Icon(Icons.add),
-      onPressed: () {
-        Scaffold.of(context).showSnackBar(
-          SnackBar(
-            content: new Text('Filerw.AddTodo() not implemented'),
-          ),
-        );
-      },
-    );
-  }
-}
-
 class _TodoListItemState extends State<TodoListItem> {
   // TodoState state;
   String state;
@@ -311,14 +326,21 @@ class _TodoListItemState extends State<TodoListItem> {
   Widget build(BuildContext context) {
     return new Dismissible(
       key: Key(widget.todo.id),
+      onDismissed: (DismissDirection dir) {
+        TodoStateChangeNotification(id: widget.todo.id, stateChange: 'flip').dispatch(context);
+      },
       child: new InkWell(
         splashColor: IssualColors.darkColorRipple,
-        onTap: () => {},
+        // TODO: onTap: emit a notification up the tree!
+        onTap: () {
+          TodoStateChangeNotification(
+                  id: widget.todo.id, stateChange: 'view', data: widget.todo.title)
+              .dispatch(context);
+        },
         child: new Row(
           children: <Widget>[
             new IconButton(
-              // FIXME: Icon does not show up
-              icon: new Icon(widget.stateIcons[state ?? 'closed']),
+              icon: new Icon(TodoListItem.stateIcons[state ?? 'closed']),
               onPressed: () => {},
             ),
             new Expanded(
@@ -328,7 +350,10 @@ class _TodoListItemState extends State<TodoListItem> {
                   // Column(
                   //   crossAxisAlignment: CrossAxisAlignment.start,
                   //   children: [
-                  new Text('#${this.widget.todo.id}: ${this.widget.todo.title}'),
+                  new Hero(
+                tag: this.widget.todo.id + 'title',
+                child: new Text(this.widget.todo.title),
+              ),
               // new Wrap(
               //   children: <Widget>[
               //     new Chip(
@@ -347,6 +372,33 @@ class _TodoListItemState extends State<TodoListItem> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class IssualFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new FloatingActionButton(
+      child: new Icon(Icons.add),
+      onPressed: () {
+        Scaffold.of(context).showSnackBar(
+          SnackBar(
+            // content: new Text('Filerw.AddTodo() not implemented'),
+            content: new Text('Adding a sample Todo to database'),
+          ),
+        );
+        TodoStateChangeNotification(
+            id: null,
+            stateChange: 'add',
+            data: new Todo(
+              isNewTodo: true,
+              rawTodo: {
+                'title': 'Test Todo',
+                'desc': 'DESC',
+              },
+            )).dispatch(context);
+      },
     );
   }
 }
