@@ -207,6 +207,7 @@ class Filerw {
   }
 
   void _removeTodo(String id, Batch bat) {
+    debugPrint('$_filerwLogPrefix Adding removal of $id to batch');
     bat.delete(todolistTableName, where: 'id == ?', whereArgs: [id]);
   }
 

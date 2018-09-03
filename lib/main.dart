@@ -145,6 +145,11 @@ class _MyHomePageState extends State<MyHomePage> {
             return new IssualTodoView(t.id, t.data as String, _rw);
           }));
           break;
+
+        /// REMOVE: delete this Todo item.
+        case 'remove':
+          _rw.removeTodo(id: t.id).then(this.init);
+          break;
       }
       return true;
     } else if (t is TodoEditNotification) {
@@ -154,7 +159,7 @@ class _MyHomePageState extends State<MyHomePage> {
           builder: (BuildContext context) => new IssualTodoEditorView(t.newTodo, t.rawTodo),
         ),
       ).then((dynamic data) async {
-        Map<String, dynamic> structuredData = data as Map<String, dynamic>;
+        var structuredData = data as Map<String, dynamic>;
         structuredData ??= {};
         if (structuredData['save'] == false || structuredData['save'] == null) return;
 
@@ -414,11 +419,19 @@ class _TodoListItemState extends State<TodoListItem> {
             // ],
             // ),
           ),
-          new IconButton(
+          new PopupMenuButton(
             icon: new Icon(Icons.more_horiz),
-            onPressed: () => new TodoStateChangeNotification(
-                    stateChange: 'flip', id: widget.todo.id, data: widget.todo)
-                .dispatch(context),
+            itemBuilder: (BuildContext context) {
+              return [PopupMenuItem(value: 'remove', child: new Text('Remove'))];
+            },
+            onSelected: (dynamic item) {
+              switch (item as String) {
+                case 'remove':
+                  TodoStateChangeNotification(id: widget.todo.id, stateChange: 'remove')
+                      .dispatch(context);
+                  break;
+              }
+            },
           )
         ],
       ),
