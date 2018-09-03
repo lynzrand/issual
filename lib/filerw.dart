@@ -25,6 +25,9 @@ class Todo {
   /// Deadline of the todo.
   DateTime ddl;
 
+  /// Group / Category
+  String category;
+
   /// Tags
   List<String> tags;
 
@@ -39,7 +42,8 @@ class Todo {
     this.title = rawTodo['title'];
     this.state = rawTodo['state'];
     this.desc = rawTodo['desc'];
-    debugPrint('[Todo] Creating new Todo out of ${rawTodo.toString()}');
+    this.category = rawTodo['category'];
+    debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
   }
 
   void changeState(String state) {
@@ -52,7 +56,8 @@ class Todo {
     map['title'] = this.title;
     map['desc'] = this.desc;
     map['ddl'] = this.ddl;
-    map['state'] = this.state.toString();
+    map['category'] = this.category;
+    map['state'] = this.state;
     // debugPrint('ToMap called on Todo $id');
     return map;
   }
@@ -64,16 +69,8 @@ class Todo {
 }
 
 class Filerw {
-  Filerw({bool debug = false}) {
-    if (debug)
-      this._debug = true;
-    else
-      this._debug = false;
-  }
-
   String _path;
   Database _db;
-  bool _debug;
   bool _initialized = false;
 
   final String todolistTableName = 'Todolist';
@@ -96,12 +93,17 @@ class Filerw {
     if (deleteCurrentDatabase) deleteDatabase(this._path);
     debugPrint('$_filerwLogPrefix Database path: ${this._path}');
 
-    this._db = await openDatabase(this._path, version: 1, onCreate: (Database db, int v) async {
+    this._db = await openDatabase(this._path, version: 2, onCreate: (Database db, int v) async {
       debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
       await db.transaction((txn) async {
         await txn.execute(
             'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT )');
       });
+    }, onUpgrade: (Database db, int oldv, int newv) async {
+      if (oldv == 1 && newv == 2) {
+        await db.execute('ALTER TABLE $todolistTableName ADD COLUMN category TEXT');
+        await db.update(todolistTableName, {'category': 'todo'}, where: 'category IS NULL');
+      }
     });
     debugPrint('$_filerwLogPrefix FileRW initialized at ${this._path}.');
 
@@ -111,25 +113,26 @@ class Filerw {
   }
 
   /// Get Todos within 3 monts OR is active
-  Future<List<Todo>> getRecentTodos() async {
+  Future<Map<String, List<Todo>>> getRecentTodos() async {
     // Check initialization status
     if (!this._initialized) this._askForInitialization();
     debugPrint('$_filerwLogPrefix Getting Recent Todos');
     String startID =
-        new Ulid(millis: DateTime.now().subtract(new Duration(days: 92)).microsecondsSinceEpoch)
+        new Ulid(millis: DateTime.now().subtract(new Duration(days: 92)).millisecondsSinceEpoch)
             .toCanonical()
-            .replaceRange(10, 25, '0' * 16);
+            .replaceRange(11, 26, '0' * 16);
     List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
         where: '"id" > ? OR "state" == ? OR "state" == ?',
         whereArgs: [startID, 'active', 'pending'],
-        // columns: ['id', 'title', 'state', 'ddl', 'tags'],
-        limit: 90);
+        columns: ['id', 'title', 'state', 'ddl', 'tags', 'category'],
+        limit: 90,
+        orderBy: 'id DESC');
     // List<Todo> todos = rawTodos.map<Todo>((rawTodo) => new Todo(rawTodo: rawTodo));
-    List<Todo> todos = [];
+    Map<String, List<Todo>> todos = {};
     for (Map<String, dynamic> todo in rawTodos) {
-      todos.add(new Todo(rawTodo: todo));
+      if (todos[todo['category'].toString()] == null) todos[todo['category']] = [];
+      todos[todo['category']].add(new Todo(rawTodo: todo));
     }
-    debugPrint(todos.toString());
     return todos;
   }
 
@@ -150,14 +153,14 @@ class Filerw {
     if (beforeTime != null) {
       String beforeId = new Ulid(millis: beforeTime.microsecondsSinceEpoch)
           .toCanonical()
-          .replaceRange(10, 25, '0' * 16);
+          .replaceRange(11, 26, '0' * 16);
       query += 'AND id > $beforeId';
     }
     // and after some time (TIME INCLUDED)
     if (beforeTime != null) {
       String afterId = new Ulid(millis: afterTime.microsecondsSinceEpoch)
           .toCanonical()
-          .replaceRange(10, 25, '0' * 16);
+          .replaceRange(11, 26, '0' * 16);
       query += 'AND id < $afterId';
     }
 
@@ -167,7 +170,7 @@ class Filerw {
     return num;
   }
 
-  void addTodo(Todo todo, Batch bat) {
+  void _addTodo(Todo todo, Batch bat) {
     bat.insert(todolistTableName, todo.toMap());
   }
 
@@ -178,18 +181,19 @@ class Filerw {
     Map<String, Todo> todoMap,
   }) async {
     if (todo == null && todoList == null && todoMap == null)
-      throw (new Exception('You must call this method with at least one Todo object!'));
+      throw ArgumentError(
+          '$_filerwLogPrefix Filerw.postTodo expected todo, todoList or todoMap to present!');
     var bat = _db.batch();
 
     debugPrint('$_filerwLogPrefix asked to post Todos with ${bat.toString()}');
     if (todo != null) {
-      this.addTodo(todo, bat);
+      this._addTodo(todo, bat);
     }
     if (todoList != null) {
-      for (Todo oneTodo in todoList) this.addTodo(oneTodo, bat);
+      for (Todo oneTodo in todoList) this._addTodo(oneTodo, bat);
     }
     if (todoMap != null) {
-      for (String todoMapKey in todoMap.keys) this.addTodo(todoMap[todoMapKey], bat);
+      for (String todoMapKey in todoMap.keys) this._addTodo(todoMap[todoMapKey], bat);
     }
 
     await bat.commit(noResult: true);
@@ -197,7 +201,29 @@ class Filerw {
 
   Future<Todo> getTodoById(String id) async {
     Todo todo;
-    todo = (await this._db.query(todolistTableName, where: 'id == $id'))[0] as Todo;
+    todo = (await this._db.query(todolistTableName, where: 'id == "$id"'))[0] as Todo;
     return todo;
+  }
+
+  void _removeTodo(String id, Batch bat) {
+    bat.delete(todolistTableName, where: 'id == ?', whereArgs: [id]);
+  }
+
+  Future<void> removeTodo({String id, List<String> ids}) {
+    if (id == null && ids == null)
+      throw ArgumentError('$_filerwLogPrefix Filerw.RemoveTodo expected id or ids to present!');
+
+    Batch bat = _db.batch();
+    if (id != null) {
+      _removeTodo(id, bat);
+    }
+    if (ids != null) {
+      ids.forEach((oneId) => _removeTodo(oneId, bat));
+    }
+    bat.commit();
+  }
+
+  Future<void> updateTodo(String id, Todo newTodo) async {
+    await _db.update(todolistTableName, newTodo.toMap(), where: 'id == ?', whereArgs: [id]);
   }
 }
