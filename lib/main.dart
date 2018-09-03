@@ -113,6 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
     //       foundEasterEgg = false;
     //     });
     //   }
+    //   return true;
     // } else
     if (t is TodoStateChangeNotification) {
       switch (t.stateChange) {
@@ -146,9 +147,12 @@ class _MyHomePageState extends State<MyHomePage> {
             return new IssualTodoView(t.id, t.data as String, _rw);
           }));
           break;
-      }
-      return true;
     }
+      return true;}
+     else if(t is TodoEditNotification){
+      Navigator.push(context, new MaterialPageRoute(builder: (BuildContext context)=>new IssualTodoEditorView(t.newTodo, t.rawTodo)));
+      return true;
+      }  
   }
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
@@ -413,23 +417,25 @@ class IssualFAB extends StatelessWidget {
       child: new Icon(Icons.add),
       onPressed: () {
         // TODO: implement REAL adding
-        Scaffold.of(context).showSnackBar(
-          SnackBar(
-            // content: new Text('Filerw.AddTodo() not implemented'),
-            content: new Text('Adding a sample Todo to database'),
-          ),
-        );
-        TodoStateChangeNotification(
-            id: null,
-            stateChange: 'add',
-            data: new Todo(
-              isNewTodo: true,
-              rawTodo: {
-                'title': 'Test Todo',
-                'desc': 'DESC',
-                'category': ['todo', 'otherCategory', 'otherCategory2'][Random().nextInt(3)]
-              },
-            )).dispatch(context);
+TodoEditNotification(newTodo: true).dispatch(context);
+
+        // Scaffold.of(context).showSnackBar(
+        //   SnackBar(
+        //     // content: new Text('Filerw.AddTodo() not implemented'),
+        //     content: new Text('Adding a sample Todo to database'),
+        //   ),
+        // );
+        // TodoStateChangeNotification(
+        //     id: null,
+        //     stateChange: 'add',
+        //     data: new Todo(
+        //       isNewTodo: true,
+        //       rawTodo: {
+        //         'title': 'Test Todo',
+        //         'desc': 'DESC',
+        //         'category': ['todo', 'otherCategory', 'otherCategory2'][Random().nextInt(3)]
+        //       },
+        //     )).dispatch(context);
       },
     );
   }

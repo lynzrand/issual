@@ -10,3 +10,9 @@ class TodoStateChangeNotification extends Notification {
     return 'TodoStateChangeNotification(id: $id, stateChange: $stateChange, data: ${data.toString()})';
   }
 }
+
+class TodoEditNotification extends Notification {
+  TodoEditNotification({this.newTodo = false, this.rawTodo});
+  bool newTodo;
+  Map<String, dynamic> rawTodo;
+}
