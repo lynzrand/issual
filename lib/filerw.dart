@@ -130,8 +130,8 @@ class Filerw {
     // List<Todo> todos = rawTodos.map<Todo>((rawTodo) => new Todo(rawTodo: rawTodo));
     Map<String, List<Todo>> todos = {};
     for (Map<String, dynamic> todo in rawTodos) {
-      if (todos[todo['category'].toString()] == null) todos[todo['category']] = [];
-      todos[todo['category']].add(new Todo(rawTodo: todo));
+      if (todos[todo['category'].toString()] == null) todos[todo['category'].toString()] = [];
+      todos[todo['category'].toString()].add(new Todo(rawTodo: todo));
     }
     return todos;
   }
@@ -171,6 +171,7 @@ class Filerw {
   }
 
   void _addTodo(Todo todo, Batch bat) {
+    debugPrint('$_filerwLogPrefix Adding ${todo.id} to batch');
     bat.insert(todolistTableName, todo.toMap());
   }
 
@@ -185,7 +186,6 @@ class Filerw {
           '$_filerwLogPrefix Filerw.postTodo expected todo, todoList or todoMap to present!');
     var bat = _db.batch();
 
-    debugPrint('$_filerwLogPrefix asked to post Todos with ${bat.toString()}');
     if (todo != null) {
       this._addTodo(todo, bat);
     }
@@ -196,6 +196,7 @@ class Filerw {
       for (String todoMapKey in todoMap.keys) this._addTodo(todoMap[todoMapKey], bat);
     }
 
+    debugPrint('$_filerwLogPrefix commiting batch');
     await bat.commit(noResult: true);
   }
 

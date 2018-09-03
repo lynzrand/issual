@@ -18,9 +18,7 @@ class IssualHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return new MaterialApp(
       title: 'Issual',
-      theme: new ThemeData(
-        primarySwatch: IssualColors.primary,
-      ),
+      theme: IssualColors.issualMainTheme,
       home: new MyHomePage(title: 'Issual'),
     );
   }
@@ -151,9 +149,26 @@ class _MyHomePageState extends State<MyHomePage> {
       return true;
     } else if (t is TodoEditNotification) {
       Navigator.push(
-          context,
-          new MaterialPageRoute(
-              builder: (BuildContext context) => new IssualTodoEditorView(t.newTodo, t.rawTodo)));
+        context,
+        new MaterialPageRoute(
+          builder: (BuildContext context) => new IssualTodoEditorView(t.newTodo, t.rawTodo),
+        ),
+      ).then((dynamic data) async {
+        Map<String, dynamic> structuredData = data as Map<String, dynamic>;
+        structuredData ??= {};
+        if (structuredData['save'] == false || structuredData['save'] == null) return;
+
+        Todo todo = new Todo(
+          rawTodo: structuredData['data'],
+          isNewTodo: structuredData['isNew'] as bool,
+        );
+        if (structuredData['isNew'] as bool)
+          await _rw.postTodo(todo: todo);
+        else
+          await _rw.updateTodo(structuredData['data']['id'], todo);
+
+        this.init(null);
+      });
       return true;
     }
   }
@@ -218,7 +233,6 @@ class _MyHomePageState extends State<MyHomePage> {
         //     )
         //   ],
         // ),
-        backgroundColor: Colors.blueGrey.shade500,
         drawer: new Drawer(
           child: new Text(
             "data",
@@ -251,7 +265,10 @@ class _IssualAppBarState extends State<IssualAppBar> {
           // TODO: show real data!
           alignment: Alignment.center,
         ),
-        title: new Text('issual/all_todos'),
+        title: new Text(
+          'iL/all_todos',
+          style: TextStyle(fontWeight: FontWeight.w400),
+        ),
       ),
       actions: <Widget>[
         new IconButton(
@@ -343,71 +360,67 @@ class _TodoListItemState extends State<TodoListItem> {
 
   @override
   Widget build(BuildContext context) {
-    return new Dismissible(
-      key: Key(widget.todo.id),
-      onDismissed: (DismissDirection dir) {},
-      child: new InkWell(
-        splashColor: IssualColors.darkColorRipple,
-        // TODO: onTap: emit a notification up the tree!
-        onTap: () {
-          TodoStateChangeNotification(
-                  id: widget.todo.id, stateChange: 'view', data: widget.todo.title)
-              .dispatch(context);
-        },
-        child: new Row(
-          children: <Widget>[
-            new IconButton(
-                icon: new Icon(TodoListItem.stateIcons[state ?? 'closed']),
-                onPressed: () {
-                  switch (state) {
-                    case 'closed':
-                    case 'canceled':
-                      state = 'open';
-                      break;
-                    case 'active':
-                    case 'pending':
-                    case 'open':
-                    default:
-                      state = 'closed';
-                      break;
-                  }
+    return new InkWell(
+      splashColor: IssualColors.darkColorRipple,
+      // TODO: onTap: emit a notification up the tree!
+      onTap: () {
+        TodoStateChangeNotification(
+                id: widget.todo.id, stateChange: 'view', data: widget.todo.title)
+            .dispatch(context);
+      },
+      child: new Row(
+        children: <Widget>[
+          new IconButton(
+              icon: new Icon(TodoListItem.stateIcons[state ?? 'closed']),
+              onPressed: () {
+                switch (state) {
+                  case 'closed':
+                  case 'canceled':
+                    state = 'open';
+                    break;
+                  case 'active':
+                  case 'pending':
+                  case 'open':
+                  default:
+                    state = 'closed';
+                    break;
+                }
 
-                  TodoStateChangeNotification(
-                    id: widget.todo.id,
-                    stateChange: 'flip',
-                    data: {'todo': widget.todo, 'index': widget.index, 'state': state},
-                  ).dispatch(context);
-                }),
-            new Expanded(
-              child:
-                  // TODO: Really, show tags?
-                  //
-                  // Column(
-                  //   crossAxisAlignment: CrossAxisAlignment.start,
-                  //   children: [
-                  new Hero(
-                tag: this.widget.todo.id + 'title',
-                child: new Text(this.widget.todo.title),
-              ),
-              // new Wrap(
-              //   children: <Widget>[
-              //     new Chip(
-              //       label: Text("Tag"),
-              //       labelPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: -2.0),
-              //     ),
-              //   ],
-              //   )
-              // ],
-              // ),
+                TodoStateChangeNotification(
+                  id: widget.todo.id,
+                  stateChange: 'flip',
+                  data: {'todo': widget.todo, 'index': widget.index, 'state': state},
+                ).dispatch(context);
+              }),
+          new Expanded(
+            child:
+                // TODO: Really, show tags?
+                //
+                // Column(
+                //   crossAxisAlignment: CrossAxisAlignment.start,
+                //   children: [
+                new Hero(
+              tag: this.widget.todo.id + 'title',
+              child: new Text(this.widget.todo.title ?? '#${this.widget.todo.id}'),
             ),
-            new IconButton(
-              icon: new Icon(Icons.more_horiz),
-              onPressed: () => new TodoStateChangeNotification(
-                      stateChange: 'flip', id: widget.todo.id, data: widget.todo)
-                  .dispatch(context),
-            )
-          ],
-        ),
+            // new Wrap(
+            //   children: <Widget>[
+            //     new Chip(
+            //       label: Text("Tag"),
+            //       labelPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: -2.0),
+            //     ),
+            //   ],
+            //   )
+            // ],
+            // ),
+          ),
+          new IconButton(
+            icon: new Icon(Icons.more_horiz),
+            onPressed: () => new TodoStateChangeNotification(
+                    stateChange: 'flip', id: widget.todo.id, data: widget.todo)
+                .dispatch(context),
+          )
+        ],
       ),
     );
   }
