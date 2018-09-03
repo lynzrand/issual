@@ -41,11 +41,15 @@ class _MyHomePageState extends State<MyHomePage> {
     this._rw = new Filerw();
     this._rw.init().then(this.init);
   }
-  Future<void> init(_) {
-    _rw.getRecentTodos().then((List<Todo> todosGot) => setState(() {
-          this._rwInitialized = true;
-          this.displayedTodos = todosGot;
-        }));
+  void init(_) {
+    _rw.getRecentTodos().then((List<Todo> todosGot) {
+      setState(() {
+        this._rwInitialized = true;
+        this.displayedTodos = todosGot;
+      });
+    }, onError: (e) {
+      debugPrint(e.toString());
+    });
   }
 
   bool foundEasterEgg = false;
@@ -56,57 +60,61 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Handles ALL notifications bubbling up the app.
   /// TODO: Intercept some notifications midway if needed.
   bool _notificationHandler(Notification t) {
-    // debugPrint(t.toString());
-    if (t is UserScrollNotification) {
-      double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
-          widget.homeScrlCtrl.position.viewportDimension +
-          360;
-      double offset = widget.homeScrlCtrl.offset;
-      // debugPrint('Notification at $offset; To match: $toScroll');
-      /* 
-       * FIXME: The following assertion was thrown while handling a gesture:
-       * 'package:flutter/src/widgets/scrollable.dart': Failed assertion: 
-       * line 445 pos 12: '_hold == null': is not true.
-       * 
-       * TODO: replace this with ScrollPhysics if possible!
-       * Note: This bug DOES NOT affect release versions of the app.
-       * 
-       * An issue has already been posted on Github at 
-       * https://github.com/flutter/flutter/issues/14452. 
-       * No official fixes has been released though.
-       * USE WITH CAUTION!
-       */
-      if (toScroll < offset && widget.homeScrlCtrl.position.maxScrollExtent - offset >= 120.0) {
-        widget.homeScrlCtrl.animateTo(
-          toScroll,
-          duration: new Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-        debugPrint('Hiding Scroll fired @$offset');
-        setState(() {
-          foundEasterEgg = false;
-        });
-      } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset < 120.0 &&
-          widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
-        widget.homeScrlCtrl.animateTo(
-          widget.homeScrlCtrl.position.maxScrollExtent,
-          duration: new Duration(milliseconds: 125),
-          curve: Curves.easeOut,
-        );
-        setState(() {
-          foundEasterEgg = true;
-        });
-        return true;
-      } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset == 0) {
-        setState(() {
-          foundEasterEgg = true;
-        });
-      } else {
-        setState(() {
-          foundEasterEgg = false;
-        });
-      }
-    } else if (t is TodoStateChangeNotification) {
+    debugPrint(t.toString());
+
+    // BROKEN CODE! FIXME:
+    //
+    // if (t is UserScrollNotification) {
+    //   double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
+    //       widget.homeScrlCtrl.position.viewportDimension +
+    //       360;
+    //   double offset = widget.homeScrlCtrl.offset;
+    //   // debugPrint('Notification at $offset; To match: $toScroll');
+    //   /*
+    //    * FIXME: The following assertion was thrown while handling a gesture:
+    //    * 'package:flutter/src/widgets/scrollable.dart': Failed assertion:
+    //    * line 445 pos 12: '_hold == null': is not true.
+    //    *
+    //    * TODO: replace this with ScrollPhysics if possible!
+    //    * Note: This bug DOES NOT affect release versions of the app.
+    //    *
+    //    * An issue has already been posted on Github at
+    //    * https://github.com/flutter/flutter/issues/14452.
+    //    * No official fixes has been released though.
+    //    * USE WITH CAUTION!
+    //    */
+    //   if (toScroll < offset && widget.homeScrlCtrl.position.maxScrollExtent - offset >= 120.0) {
+    //     widget.homeScrlCtrl.animateTo(
+    //       toScroll,
+    //       duration: new Duration(milliseconds: 250),
+    //       curve: Curves.easeOut,
+    //     );
+    //     debugPrint('Hiding Scroll fired @$offset');
+    //     setState(() {
+    //       foundEasterEgg = false;
+    //     });
+    //   } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset < 120.0 &&
+    //       widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
+    //     widget.homeScrlCtrl.animateTo(
+    //       widget.homeScrlCtrl.position.maxScrollExtent,
+    //       duration: new Duration(milliseconds: 125),
+    //       curve: Curves.easeOut,
+    //     );
+    //     setState(() {
+    //       foundEasterEgg = true;
+    //     });
+    //     return true;
+    //   } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset == 0) {
+    //     setState(() {
+    //       foundEasterEgg = true;
+    //     });
+    //   } else {
+    //     setState(() {
+    //       foundEasterEgg = false;
+    //     });
+    //   }
+    // } else
+    if (t is TodoStateChangeNotification) {
       switch (t.stateChange) {
 
         /// FLIP: flip Todo's state

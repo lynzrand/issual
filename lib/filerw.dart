@@ -115,7 +115,7 @@ class Filerw {
             .toCanonical()
             .replaceRange(11, 26, '0' * 16);
     List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
-        where: '"id" > "?" OR "state" == ? OR "state" == ?',
+        where: '"id" > ? OR "state" == ? OR "state" == ?',
         whereArgs: [startID, 'active', 'pending'],
         // columns: ['id', 'title', 'state', 'ddl', 'tags'],
         limit: 90);
@@ -124,7 +124,6 @@ class Filerw {
     for (Map<String, dynamic> todo in rawTodos) {
       todos.add(new Todo(rawTodo: todo));
     }
-    debugPrint(todos.toString());
     return todos;
   }
 
