@@ -39,11 +39,18 @@ class _MyHomePageState extends State<MyHomePage> {
     this._rw = new Filerw();
     this._rw.init().then(this.init);
   }
-  void init(_) {
+  void init(_) async {
     _rw.getRecentTodos().then((Map<String, List<Todo>> todosGot) {
-      setState(() {
-        this._rwInitialized = true;
-        this.displayedTodos = todosGot;
+      _rw.getCategories().then((List<String> categories) {
+        setState(() {
+          this.categories = categories;
+          this.displayedTodos = todosGot;
+
+          this._rwInitialized = true;
+          debugPrint(categories.toString());
+        });
+      }, onError: (e) {
+        debugPrint(e.toString());
       });
     }, onError: (e) {
       debugPrint(e.toString());
@@ -54,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Filerw _rw;
   bool _rwInitialized = false;
   Map<String, List<Todo>> displayedTodos = {};
+  List<String> categories = [];
 
   /// Handles ALL notifications bubbling up the app.
   /// TODO: Intercept some notifications midway if needed.
@@ -134,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
         case 'add':
           this.setState(() {
             this.displayedTodos[t.data.category] ??= [];
-            this.displayedTodos[t.data.category].add(t.data as Todo);
+            this.displayedTodos[t.data.category].insert(0, t.data as Todo);
           });
           _rw.postTodo(todo: t.data as Todo);
           break;
@@ -148,7 +156,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
         /// REMOVE: delete this Todo item.
         case 'remove':
-          _rw.removeTodo(id: t.id).then(this.init);
+          setState(() {
+            displayedTodos[(t.data['todo'] as Todo).category].removeAt(t.data['index']);
+          });
+          _rw.removeTodo(id: t.id);
           break;
       }
       return true;
@@ -180,10 +191,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
     // TODO: show categorized todo cards
-    return new TodoCard(
-      title: displayedTodos.keys.elementAt(index),
-      todos: displayedTodos[displayedTodos.keys.elementAt(index)],
-    );
+    if (!this._rwInitialized)
+      return null;
+    else
+      return new TodoCard(
+        title: categories[index].toString(),
+        todos: displayedTodos[categories[index].toString()],
+      );
   }
 
 // UI
@@ -427,8 +441,10 @@ class _TodoListItemState extends State<TodoListItem> {
             onSelected: (dynamic item) {
               switch (item as String) {
                 case 'remove':
-                  TodoStateChangeNotification(id: widget.todo.id, stateChange: 'remove')
-                      .dispatch(context);
+                  TodoStateChangeNotification(
+                      id: widget.todo.id,
+                      stateChange: 'remove',
+                      data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
                   break;
               }
             },

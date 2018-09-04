@@ -74,6 +74,7 @@ class Filerw {
   bool _initialized = false;
 
   final String todolistTableName = 'Todolist';
+  final String categoryTableName = 'Categories';
 
   Database getdb() => this._db;
   void debugSetDb(Database db) => this._db = db;
@@ -93,16 +94,25 @@ class Filerw {
     if (deleteCurrentDatabase) deleteDatabase(this._path);
     debugPrint('$_filerwLogPrefix Database path: ${this._path}');
 
-    this._db = await openDatabase(this._path, version: 2, onCreate: (Database db, int v) async {
+    this._db = await openDatabase(this._path, version: 3, onCreate: (Database db, int v) async {
       debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
       await db.transaction((txn) async {
         await txn.execute(
-            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT )');
+            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT )');
+        await txn.execute('CREATE TABLE $categoryTableName ( category TEXT )');
       });
     }, onUpgrade: (Database db, int oldv, int newv) async {
       if (oldv == 1 && newv == 2) {
         await db.execute('ALTER TABLE $todolistTableName ADD COLUMN category TEXT');
         await db.update(todolistTableName, {'category': 'todo'}, where: 'category IS NULL');
+        oldv = 2;
+      }
+      if (oldv == 2 && newv == 3) {
+        // TODO: ADD NEW table to manage categories!
+        await db.execute(
+            'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT )');
+        await db.rawInsert(
+            'INSERT INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
       }
     });
     debugPrint('$_filerwLogPrefix FileRW initialized at ${this._path}.');
@@ -227,5 +237,13 @@ class Filerw {
 
   Future<void> updateTodo(String id, Todo newTodo) async {
     await _db.update(todolistTableName, newTodo.toMap(), where: 'id == ?', whereArgs: [id]);
+  }
+
+  Future<List<String>> getCategories() async {
+    var rawCategories = await _db.query(categoryTableName, columns: ['category']);
+    List<String> categories = [];
+    for (var raw in rawCategories) categories.add(raw['category'].toString());
+    debugPrint('Categories: ${categories.toString()}');
+    return categories;
   }
 }
