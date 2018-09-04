@@ -89,11 +89,15 @@ class Filerw {
     // Yeah I know this is deprecated but it is the only way dude =x=
     // await Sqflite.devSetDebugModeOn(true);
 
-    debugPrint('$_filerwLogPrefix FileRW initialization start.');
+    debugPrint(
+        '$_filerwLogPrefix FileRW initialization start. ${deleteCurrentDatabase ? "DELETING CURRENT DATABASE" : ""}');
     var path = await getDatabasesPath();
     this._path = join(path, "todo.db");
 
-    if (deleteCurrentDatabase) deleteDatabase(this._path);
+    if (deleteCurrentDatabase) {
+      await deleteDatabase(this._path);
+    }
+
     debugPrint('$_filerwLogPrefix Database path: ${this._path}');
 
     this._db = await openDatabase(this._path, version: 3, onCreate: (Database db, int v) async {
@@ -102,7 +106,7 @@ class Filerw {
         await txn.execute(
             'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT )');
         await txn.execute(
-            'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT UNIQUE)');
+            'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT UNIQUE NOT NULL)');
         await txn.insert(todolistTableName, {
           'id': '00000000000000000000000000',
           'title': 'Hey, there!',
@@ -159,6 +163,8 @@ class Filerw {
       if (todos[todo['category'].toString()] == null) todos[todo['category'].toString()] = [];
       todos[todo['category'].toString()].add(new Todo(rawTodo: todo));
     }
+    // This is not the best way to do...
+    await flashCategories();
     return todos;
   }
 
@@ -214,7 +220,7 @@ class Filerw {
   void _addTodo(Todo todo, Batch bat) {
     if (todo.category != null) {
       debugPrint('$_filerwLogPrefix Adding ${todo.id} to batch');
-      bat.insert(todolistTableName, todo.toMap());
+      bat.insert(todolistTableName, todo.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
     } else {
       throw Exception('Category of Todo ${todo.id} is null!');
     }
@@ -271,6 +277,7 @@ class Filerw {
   }
 
   Future<void> updateTodo(String id, Todo newTodo) async {
+    assert(id != null);
     await _db.update(todolistTableName, newTodo.toMap(), where: 'id == ?', whereArgs: [id]);
   }
 
@@ -278,10 +285,11 @@ class Filerw {
   /// Useful when Todolist has more categories than Categories
   Future<void> flashCategories() async {
     await _db.rawInsert(
-        'INSERT INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
+        'INSERT OR REPLACE INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
   }
 
   Future<List<String>> getCategories() async {
+    await flashCategories();
     var rawCategories = await _db.query(categoryTableName, columns: ['category']);
     List<String> categories = [];
     for (var raw in rawCategories) categories.add(raw['category'].toString());
@@ -290,6 +298,7 @@ class Filerw {
   }
 
   Future<void> addCategory(String cat) async {
-    await _db.insert(categoryTableName, {'category': cat});
+    await _db.insert(categoryTableName, {'category': cat},
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }

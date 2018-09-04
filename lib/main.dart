@@ -39,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
     this._rw = new Filerw();
     this._rw.init().then(this.init);
   }
-  void init(_) async {
+  Future<void> init(_) async {
     _rw.getRecentTodos().then((Map<String, List<Todo>> todosGot) {
       _rw.getCategories().then((List<String> categories) {
         setState(() {
@@ -165,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         /// WIPE: DANGEROUS Wipe out the whole database
         case 'wipe':
-          _rw.wipeDatabase().then(this.init);
+          _rw.init(deleteCurrentDatabase: true).then(this.init);
           break;
       }
       return true;
@@ -185,21 +185,20 @@ class _MyHomePageState extends State<MyHomePage> {
           isNewTodo: structuredData['isNew'] as bool,
         );
         if (structuredData['isNew'] as bool)
-          await _rw.postTodo(todo: todo);
+          await _rw.postTodo(todo: todo).catchError((e) => debugPrint(e.toString()));
         else
           await _rw.updateTodo(structuredData['data']['id'], todo);
 
-        if (categories.indexOf(structuredData['category']) < 0)
-          await _rw.addCategory(structuredData['category']);
+        if (categories.indexOf(todo.category) < 0)
+          await _rw.addCategory(todo.category).catchError((e) => debugPrint(e.toString()));
 
-        this.init(null);
-      });
+        await this.init(null).catchError((e) => debugPrint(e.toString()));
+      }).catchError((e) => debugPrint(e.toString()));
       return true;
     }
   }
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
-    // TODO: show categorized todo cards
     if (!this._rwInitialized)
       return null;
     else
@@ -221,7 +220,7 @@ class _MyHomePageState extends State<MyHomePage> {
             new SliverToBoxAdapter(child: new IssualDebugInfoCard(rwInitialized: _rwInitialized)),
             new SliverList(
               delegate: new SliverChildBuilderDelegate(this._buildTodoCard,
-                  childCount: displayedTodos.keys.length),
+                  childCount: categories.length),
             ),
             new SliverFillRemaining(
               child: new Container(
@@ -320,12 +319,14 @@ class TodoCard extends StatelessWidget {
                   new Expanded(
                       child: new Text(
                     '$title',
-                    style: Theme.of(context).accentTextTheme.display1,
+                    style: TextStyle(
+                        color: themeData.primaryColor,
+                        fontSize: Theme.of(context).textTheme.display1.fontSize),
                   )),
-                  new IconButton(
-                    icon: new Icon(Icons.expand_less),
-                    onPressed: null,
-                  ),
+                  // new IconButton(
+                  //   icon: new Icon(Icons.expand_less),
+                  //   onPressed: null,
+                  // ),
                 ],
               ),
             ),
@@ -416,13 +417,15 @@ class _TodoListItemState extends State<TodoListItem> {
               onPressed: () {
                 setState(() {
                   switch (state) {
+                    case 'open':
+                      state = 'active';
+                      break;
                     case 'closed':
                     case 'canceled':
                       state = 'open';
                       break;
                     case 'active':
                     case 'pending':
-                    case 'open':
                     default:
                       state = 'closed';
                       break;

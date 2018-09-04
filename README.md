@@ -1,6 +1,6 @@
 # iL
 
-iL (codenamed "Issual") is a Todo Manager with nothing special. The name "iL"
+iL (codename "Issual") is a Todo Manager with nothing special. The name "iL"
 does not hold any special meanings, it's just a meaningless name for a course
 design homework.
 
