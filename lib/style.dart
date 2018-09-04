@@ -25,6 +25,28 @@ class IssualColors {
       accentColor: Colors.blueAccent,
     ),
   };
-}
 
-class TodoTextStyle extends TextStyle {}
+  static TextStyle getTodoTextStyle(BuildContext ctx, String state) {
+    TextStyle ts;
+    switch (state) {
+      case 'closed':
+      case 'canceled':
+        ts = TextStyle(
+          color: Theme.of(ctx).disabledColor,
+          decoration: TextDecoration.lineThrough,
+        );
+        break;
+      case 'active':
+      case 'pending':
+        ts = TextStyle(
+          color: Theme.of(ctx).accentColor,
+          fontWeight: FontWeight.bold,
+        );
+        break;
+      case 'open':
+      default:
+        break;
+    }
+    return Theme.of(ctx).textTheme.body1.merge(ts);
+  }
+}

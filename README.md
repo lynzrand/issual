@@ -1,3 +1,5 @@
+![iL Logo](docs/res/iL_header.png)
+
 # iL
 
 iL (codename "Issual") is a Todo Manager with nothing special. The name "iL"

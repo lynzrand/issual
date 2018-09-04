@@ -447,7 +447,10 @@ class _TodoListItemState extends State<TodoListItem> {
                 //   children: [
                 new Hero(
               tag: this.widget.todo.id + 'title',
-              child: new Text(this.widget.todo.title ?? '#${this.widget.todo.id}'),
+              child: new Text(
+                this.widget.todo.title ?? '#${this.widget.todo.id}',
+                style: IssualColors.getTodoTextStyle(context, state),
+              ),
             ),
             // new Wrap(
             //   children: <Widget>[
