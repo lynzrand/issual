@@ -63,7 +63,7 @@ class IssualTodoEditorView extends StatefulWidget {
 
 class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
   _IssualTodoEditorViewState(this.rawTodo) {
-    this.rawTodo ??= {'state': 'open'};
+    this.rawTodo ??= {'state': 'open', 'category': 'todo'};
   }
 
   Map<String, dynamic> rawTodo;

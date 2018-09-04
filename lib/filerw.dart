@@ -76,6 +76,8 @@ class Filerw {
   final String todolistTableName = 'Todolist';
   final String categoryTableName = 'Categories';
 
+  List<String> categories = [];
+
   Database getdb() => this._db;
   void debugSetDb(Database db) => this._db = db;
 
@@ -85,7 +87,7 @@ class Filerw {
 
   Future<void> init({bool deleteCurrentDatabase = false}) async {
     // Yeah I know this is deprecated but it is the only way dude =x=
-    await Sqflite.devSetDebugModeOn(true);
+    // await Sqflite.devSetDebugModeOn(true);
 
     debugPrint('$_filerwLogPrefix FileRW initialization start.');
     var path = await getDatabasesPath();
@@ -99,7 +101,15 @@ class Filerw {
       await db.transaction((txn) async {
         await txn.execute(
             'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT )');
-        await txn.execute('CREATE TABLE $categoryTableName ( category TEXT )');
+        await txn.execute(
+            'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT UNIQUE)');
+        await txn.insert(todolistTableName, {
+          'id': '00000000000000000000000000',
+          'title': 'Hey, there!',
+          'category': 'todo',
+          'state': 'active',
+        });
+        await txn.insert(categoryTableName, {'category': 'todo'});
       });
     }, onUpgrade: (Database db, int oldv, int newv) async {
       if (oldv == 1 && newv == 2) {
@@ -113,7 +123,10 @@ class Filerw {
             'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT )');
         await db.rawInsert(
             'INSERT INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
+        oldv = 3;
       }
+
+      this.categories = await getCategories();
     });
     debugPrint('$_filerwLogPrefix FileRW initialized at ${this._path}.');
 
@@ -123,6 +136,8 @@ class Filerw {
   }
 
   /// Get Todos within 3 monts OR is active
+  ///
+  /// Returns Map< category: String, List< Todo > >
   Future<Map<String, List<Todo>>> getRecentTodos() async {
     // Check initialization status
     if (!this._initialized) this._askForInitialization();
@@ -144,6 +159,14 @@ class Filerw {
       todos[todo['category'].toString()].add(new Todo(rawTodo: todo));
     }
     return todos;
+  }
+
+  Future<bool> wipeDatabase() async {
+    debugPrint('$_filerwLogPrefix WIPING OUT THE ENTIRE DATABASE!');
+    await _db.delete(todolistTableName);
+    await _db.delete(categoryTableName);
+    debugPrint('$_filerwLogPrefix SUCCESSFULLY DELETED ALL ENTRIES.');
+    return true;
   }
 
   Future<int> countTodos(
@@ -239,11 +262,22 @@ class Filerw {
     await _db.update(todolistTableName, newTodo.toMap(), where: 'id == ?', whereArgs: [id]);
   }
 
+  /// Flash categories with unique selections from TodoList.
+  /// Useful when Todolist has more categories than Categories
+  Future<void> flashCategories() async {
+    await _db.rawInsert(
+        'INSERT INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
+  }
+
   Future<List<String>> getCategories() async {
     var rawCategories = await _db.query(categoryTableName, columns: ['category']);
     List<String> categories = [];
     for (var raw in rawCategories) categories.add(raw['category'].toString());
     debugPrint('Categories: ${categories.toString()}');
     return categories;
+  }
+
+  Future<void> addCategory(String cat) async {
+    await _db.insert(categoryTableName, {'category': cat});
   }
 }

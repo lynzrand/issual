@@ -14,4 +14,17 @@ class IssualColors {
     scaffoldBackgroundColor: primary.shade50,
     brightness: Brightness.light,
   );
+
+  static Map<String, ThemeData> coloredThemes = <String, ThemeData>{
+    'red': ThemeData(
+      primarySwatch: Colors.red,
+      accentColor: Colors.redAccent,
+    ),
+    'blue': ThemeData(
+      primarySwatch: Colors.blue,
+      accentColor: Colors.blueAccent,
+    ),
+  };
 }
+
+class TodoTextStyle extends TextStyle {}

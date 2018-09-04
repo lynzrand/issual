@@ -131,9 +131,10 @@ class _MyHomePageState extends State<MyHomePage> {
         case 'flip':
           // TODO: implement FLIP
           Todo todo = t.data['todo'] as Todo;
-          this.setState(() {
-            displayedTodos[todo.category][t.data['index']].state = t.data['state'];
-          });
+          // setState() called at TodoListItem
+          // this.setState(() {
+          //   displayedTodos[todo.category][t.data['index']].state = t.data['state'];
+          // });
           todo.state = t.data['state'];
           _rw.updateTodo(todo.id, todo);
           break;
@@ -161,6 +162,11 @@ class _MyHomePageState extends State<MyHomePage> {
           });
           _rw.removeTodo(id: t.id);
           break;
+
+        /// WIPE: DANGEROUS Wipe out the whole database
+        case 'wipe':
+          _rw.wipeDatabase().then(this.init);
+          break;
       }
       return true;
     } else if (t is TodoEditNotification) {
@@ -182,6 +188,9 @@ class _MyHomePageState extends State<MyHomePage> {
           await _rw.postTodo(todo: todo);
         else
           await _rw.updateTodo(structuredData['data']['id'], todo);
+
+        if (categories.indexOf(structuredData['category']) < 0)
+          await _rw.addCategory(structuredData['category']);
 
         this.init(null);
       });
@@ -209,20 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
         body: new CustomScrollView(
           slivers: <Widget>[
             new IssualAppBar(_rwInitialized),
-            new SliverToBoxAdapter(
-              child: new Container(
-                child: new Card(
-                  margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: new Column(
-                    children: <Widget>[
-                      new ListTile(
-                        title: Text('Database Loaded: $_rwInitialized'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            new SliverToBoxAdapter(child: new IssualDebugInfoCard(rwInitialized: _rwInitialized)),
             new SliverList(
               delegate: new SliverChildBuilderDelegate(this._buildTodoCard,
                   childCount: displayedTodos.keys.length),
@@ -306,48 +302,52 @@ class TodoCard extends StatelessWidget {
 
   final String title;
   final List<Todo> todos;
+  final ThemeData themeData = IssualColors.coloredThemes['red'];
 
   @override
   Widget build(BuildContext context) {
-    return new Card(
-      margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: new Column(
-        children: <Widget>[
-          new Padding(
-            padding: new EdgeInsets.fromLTRB(24.0, 0.0, 0.0, 0.0),
-            child: new Row(
+    return Theme(
+      key: new Key('cardTheme'),
+      data: themeData,
+      child: new Card(
+        margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: new Column(
+          children: <Widget>[
+            new Padding(
+              padding: new EdgeInsets.fromLTRB(24.0, 0.0, 0.0, 0.0),
+              child: new Row(
+                children: <Widget>[
+                  new Expanded(
+                      child: new Text(
+                    '$title',
+                    style: Theme.of(context).accentTextTheme.display1,
+                  )),
+                  new IconButton(
+                    icon: new Icon(Icons.expand_less),
+                    onPressed: null,
+                  ),
+                ],
+              ),
+            ),
+            new Column(
+              children: List.generate(todos.length, (int index) {
+                return new TodoListItem(todos[index], index);
+              }),
+            ),
+            new ButtonBar(
               children: <Widget>[
-                new Expanded(
-                    child: new Text(
-                  '$title',
-                  style: new TextStyle(
-                      color: new Color(0xff0000ff), fontWeight: FontWeight.w300, fontSize: 24.0),
-                )),
-                new IconButton(
-                  icon: new Icon(Icons.expand_less),
-                  onPressed: null,
-                ),
+                // new IconButton(
+                //   icon: new Icon(Icons.add),
+                //   onPressed: null,
+                // )
+                new FlatButton(
+                  child: new Text("Add".toUpperCase()),
+                  onPressed: () => {},
+                )
               ],
             ),
-          ),
-          new Column(
-            children: List.generate(todos.length, (int index) {
-              return new TodoListItem(todos[index], index);
-            }),
-          ),
-          new ButtonBar(
-            children: <Widget>[
-              // new IconButton(
-              //   icon: new Icon(Icons.add),
-              //   onPressed: null,
-              // )
-              new FlatButton(
-                child: new Text("Add".toUpperCase()),
-                onPressed: () => {},
-              )
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -358,24 +358,43 @@ class TodoListItem extends StatefulWidget {
 
   // TODO: move this to filerw.dart/todo
   static const stateIcons = <String, IconData>{
-    'open': Icons.error_outline,
+    'open': Icons.radio_button_unchecked,
     'closed': Icons.check_circle_outline,
     'pending': Icons.access_time,
     'active': Icons.data_usage,
     'canceled': Icons.remove_circle_outline,
   };
+
   final Todo todo;
   final int index;
 
   @override
   State<StatefulWidget> createState() {
-    return new _TodoListItemState();
+    return new _TodoListItemState(todo.state);
   }
 }
 
 class _TodoListItemState extends State<TodoListItem> {
   // TodoState state;
+  _TodoListItemState(this.state);
   String state;
+
+  Color getIconColor(BuildContext context, String state) {
+    final theme = Theme.of(context);
+    switch (state) {
+      case 'open':
+        return theme.primaryColor;
+        break;
+      case 'closed':
+      case 'finished':
+        return theme.disabledColor;
+        break;
+      case 'active':
+      case 'pending':
+        return theme.accentColor;
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,20 +409,25 @@ class _TodoListItemState extends State<TodoListItem> {
       child: new Row(
         children: <Widget>[
           new IconButton(
-              icon: new Icon(TodoListItem.stateIcons[state ?? 'closed']),
+              icon: new Icon(
+                TodoListItem.stateIcons[state],
+                color: getIconColor(context, state),
+              ),
               onPressed: () {
-                switch (state) {
-                  case 'closed':
-                  case 'canceled':
-                    state = 'open';
-                    break;
-                  case 'active':
-                  case 'pending':
-                  case 'open':
-                  default:
-                    state = 'closed';
-                    break;
-                }
+                setState(() {
+                  switch (state) {
+                    case 'closed':
+                    case 'canceled':
+                      state = 'open';
+                      break;
+                    case 'active':
+                    case 'pending':
+                    case 'open':
+                    default:
+                      state = 'closed';
+                      break;
+                  }
+                });
 
                 TodoStateChangeNotification(
                   id: widget.todo.id,
@@ -463,25 +487,48 @@ class IssualFAB extends StatelessWidget {
       onPressed: () {
         // TODO: implement REAL adding
         TodoEditNotification(newTodo: true).dispatch(context);
-
-        // Scaffold.of(context).showSnackBar(
-        //   SnackBar(
-        //     // content: new Text('Filerw.AddTodo() not implemented'),
-        //     content: new Text('Adding a sample Todo to database'),
-        //   ),
-        // );
-        // TodoStateChangeNotification(
-        //     id: null,
-        //     stateChange: 'add',
-        //     data: new Todo(
-        //       isNewTodo: true,
-        //       rawTodo: {
-        //         'title': 'Test Todo',
-        //         'desc': 'DESC',
-        //         'category': ['todo', 'otherCategory', 'otherCategory2'][Random().nextInt(3)]
-        //       },
-        //     )).dispatch(context);
       },
+    );
+  }
+}
+
+class IssualDebugInfoCard extends StatelessWidget {
+  IssualDebugInfoCard({this.rwInitialized});
+
+  final bool rwInitialized;
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return new Container(
+      child: new Card(
+        margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: new Column(
+          children: <Widget>[
+            new ListTile(
+              title: Text('Database Loaded: $rwInitialized'),
+              onLongPress: () async {
+                var result = await showDialog(
+                    context: context,
+                    builder: (context) => new AlertDialog(
+                          title: Text('Wipe the database?'),
+                          actions: <Widget>[
+                            FlatButton(
+                              child: Text('YES'),
+                              onPressed: () => Navigator.pop(context, true),
+                            ),
+                            FlatButton(
+                              child: Text('NO'),
+                              onPressed: () => Navigator.pop(context, false),
+                            ),
+                          ],
+                        ));
+                if (result) TodoStateChangeNotification(stateChange: 'wipe').dispatch(context);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

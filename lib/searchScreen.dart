@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_search/material_search.dart';
 
 class IssualSearchScreen extends StatefulWidget {
   @override
@@ -13,8 +14,10 @@ class _IssualSearchScreenState extends State<IssualSearchScreen> {
   Widget build(BuildContext context) {
     // TODO: implement build
     return new Scaffold(
-      appBar: AppBar(title: new Text('Search')),
-      body: new Text("This is the Search screen.\nTODO: Implement REAL searching."),
+      // appBar: AppBar(title: new Text('Search')),
+      body: new MaterialSearch(
+        placeholder: 'Search',
+      ),
     );
   }
 }
