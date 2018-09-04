@@ -340,8 +340,8 @@ class TodoCard extends StatelessWidget {
                 //   icon: new Icon(Icons.add),
                 //   onPressed: null,
                 // )
-                new FlatButton(
-                  child: new Text("Add".toUpperCase()),
+                new IconButton(
+                  icon: Icon(Icons.add),
                   onPressed: () => {},
                 )
               ],

@@ -147,10 +147,11 @@ class Filerw {
             .toCanonical()
             .replaceRange(11, 26, '0' * 16);
     List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
-        where: '"id" > ? OR "state" == ? OR "state" == ?',
-        whereArgs: [startID, 'active', 'pending'],
+        // Disabling limits in order to aid development
+        // where: '"id" > ? OR "state" == ? OR "state" == ?',
+        // whereArgs: [startID, 'active', 'pending'],
         columns: ['id', 'title', 'state', 'ddl', 'tags', 'category'],
-        limit: 90,
+        // limit: 90,
         orderBy: 'id DESC');
     // List<Todo> todos = rawTodos.map<Todo>((rawTodo) => new Todo(rawTodo: rawTodo));
     Map<String, List<Todo>> todos = {};
@@ -165,6 +166,13 @@ class Filerw {
     debugPrint('$_filerwLogPrefix WIPING OUT THE ENTIRE DATABASE!');
     await _db.delete(todolistTableName);
     await _db.delete(categoryTableName);
+    await _db.insert(todolistTableName, {
+      'id': '00000000000000000000000000',
+      'title': 'Hey, there!',
+      'category': 'todo',
+      'state': 'active',
+    });
+    await _db.insert(categoryTableName, {'category': 'todo'});
     debugPrint('$_filerwLogPrefix SUCCESSFULLY DELETED ALL ENTRIES.');
     return true;
   }
@@ -204,8 +212,12 @@ class Filerw {
   }
 
   void _addTodo(Todo todo, Batch bat) {
-    debugPrint('$_filerwLogPrefix Adding ${todo.id} to batch');
-    bat.insert(todolistTableName, todo.toMap());
+    if (todo.category != null) {
+      debugPrint('$_filerwLogPrefix Adding ${todo.id} to batch');
+      bat.insert(todolistTableName, todo.toMap());
+    } else {
+      throw Exception('Category of Todo ${todo.id} is null!');
+    }
   }
 
   /// Post one or more Todos into database

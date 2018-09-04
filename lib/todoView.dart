@@ -94,24 +94,25 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
             children: <Widget>[
               new TextField(
                 key: new Key('titleField'),
-                decoration: InputDecoration(
-                  hintText: 'Title',
-                  isDense: false,
-                ),
+                decoration:
+                    InputDecoration(hintText: 'Title', isDense: false, border: InputBorder.none),
                 style: new TextStyle(
                   fontSize: 24.0,
                   color: Colors.blueGrey.shade800,
                 ),
                 onChanged: (String str) => rawTodo['title'] = str,
               ),
+              new TextField(
+                key: new Key('categoryField'),
+                decoration:
+                    InputDecoration(hintText: 'Category', isDense: false, border: InputBorder.none),
+                onChanged: (String str) => rawTodo['category'] = str,
+              ),
               new Container(
                 constraints: new BoxConstraints(minHeight: 240.0),
                 child: new TextField(
                   key: new Key('descField'),
-                  decoration: InputDecoration(
-                    hintText: 'Description',
-                    border: null,
-                  ),
+                  decoration: InputDecoration(hintText: 'Description', border: InputBorder.none),
                   maxLines: null,
                   onChanged: (String str) => rawTodo['desc'] = str,
                 ),
