@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+enum TodoStateChangeType {
+  flip,
+  add,
+  view,
+  remove,
+  wipe,
+}
+
 class TodoStateChangeNotification extends Notification {
   TodoStateChangeNotification({this.id, @required this.stateChange, this.data});
   final String id;
-  final String stateChange;
+  final TodoStateChangeType stateChange;
   final dynamic data;
 
   String toString() {
@@ -15,4 +23,21 @@ class TodoEditNotification extends Notification {
   TodoEditNotification({this.newTodo = false, this.rawTodo});
   bool newTodo;
   Map<String, dynamic> rawTodo;
+}
+
+enum TodoCategoryChangeType {
+  add,
+  remove,
+  rename,
+}
+
+class TodoCategoryChangeNotification extends Notification {
+  TodoCategoryChangeNotification({@required this.type, this.data});
+
+  final TodoCategoryChangeType type;
+  dynamic data;
+
+  String toString() {
+    return 'TodoStateChangeNotification( type: $type, data: $data )';
+  }
 }

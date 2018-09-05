@@ -128,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
         /// e.g.
         ///   open, active, pending => closed
         ///   closed, canceled => open
-        case 'flip':
+        case TodoStateChangeType.flip:
           // TODO: implement FLIP
           Todo todo = t.data['todo'] as Todo;
           // setState() called at TodoListItem
@@ -140,7 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
 
         /// ADD: add Todo in t.data to database
-        case 'add':
+        case TodoStateChangeType.add:
           this.setState(() {
             this.displayedTodos[t.data.category] ??= [];
             this.displayedTodos[t.data.category].insert(0, t.data as Todo);
@@ -149,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
 
         /// VIEW: navigate to Todo whose id == t.id
-        case 'view':
+        case TodoStateChangeType.view:
           Navigator.push(
             context,
             IssualTransitions.verticlaPageTransition(
@@ -161,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
 
         /// REMOVE: delete this Todo item.
-        case 'remove':
+        case TodoStateChangeType.remove:
           setState(() {
             displayedTodos[(t.data['todo'] as Todo).category].removeAt(t.data['index']);
           });
@@ -169,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
 
         /// WIPE: DANGEROUS Wipe out the whole database
-        case 'wipe':
+        case TodoStateChangeType.wipe:
           _rw.init(deleteCurrentDatabase: true).then(this.init);
           break;
       }
@@ -226,18 +226,15 @@ class _MyHomePageState extends State<MyHomePage> {
               delegate: new SliverChildBuilderDelegate(this._buildTodoCard,
                   childCount: categories.length),
             ),
+            new SliverToBoxAdapter(child: IssualNewCategoryButton()),
+            // new SliverFillRemaining(),
             new SliverFillRemaining(
               child: new Container(
                 alignment: Alignment.center,
                 padding: EdgeInsets.all(16.0),
                 // TODO: show REAL easter eggs!
                 child: new Text(
-                  foundEasterEgg
-                      ? "You found an Easter Egg!"
-                      : "That's all. What are you expecting?",
-                  style: new TextStyle(
-                    color: new Color(0xffffffff),
-                  ),
+                  'Nothing more to show (￣▽￣)"',
                 ),
               ),
             ),
@@ -338,8 +335,15 @@ class TodoCard extends StatelessWidget {
               ),
             ),
             new Column(
-              children: List.generate(todos.length, (int index) {
-                return new TodoListItem(todos[index], index, key: Key(todos[index].id));
+              children: List.generate(todos == null ? 1 : todos.length, (int index) {
+                if (todos == null)
+                  return new Container(
+                    height: 96.0,
+                    alignment: Alignment.center,
+                    child: new Text('This category currently has no Todos'),
+                  );
+                else
+                  return new TodoListItem(todos[index], index, key: Key(todos[index].id));
               }),
             ),
             new ButtonBar(
@@ -350,7 +354,8 @@ class TodoCard extends StatelessWidget {
                 // )
                 new IconButton(
                   icon: Icon(Icons.add),
-                  onPressed: () => {},
+                  onPressed: () => TodoEditNotification(rawTodo: {'category': title}, newTodo: true)
+                      .dispatch(context),
                 )
               ],
             ),
@@ -424,7 +429,7 @@ class _TodoListItemState extends State<TodoListItem> {
 
     TodoStateChangeNotification(
       id: widget.todo.id,
-      stateChange: 'flip',
+      stateChange: TodoStateChangeType.flip,
       data: {'todo': widget.todo, 'index': widget.index, 'state': state},
     ).dispatch(context);
   }
@@ -440,8 +445,10 @@ class _TodoListItemState extends State<TodoListItem> {
         // TODO: onTap: emit a notification up the tree!
         onTap: () {
           TodoStateChangeNotification(
-                  id: widget.todo.id, stateChange: 'view', data: widget.todo.title)
-              .dispatch(context);
+            id: widget.todo.id,
+            stateChange: TodoStateChangeType.view,
+            data: widget.todo.title,
+          ).dispatch(context);
         },
         child: new Row(
           children: <Widget>[
@@ -488,7 +495,7 @@ class _TodoListItemState extends State<TodoListItem> {
                   case 'remove':
                     TodoStateChangeNotification(
                         id: widget.todo.id,
-                        stateChange: 'remove',
+                        stateChange: TodoStateChangeType.remove,
                         data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
                     break;
                   case 'edit':
@@ -513,6 +520,24 @@ class IssualFAB extends StatelessWidget {
         // TODO: implement REAL adding
         TodoEditNotification(newTodo: true).dispatch(context);
       },
+    );
+  }
+}
+
+class IssualNewCategoryButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new Container(
+      margin: EdgeInsets.all(16.0),
+      height: 48.0,
+      child: new RaisedButton.icon(
+        icon: Icon(Icons.add),
+        label: Text('Add Category'),
+        onPressed: () =>
+            TodoCategoryChangeNotification(type: TodoCategoryChangeType.add).dispatch(context),
+        color: Theme.of(context).accentColor,
+        textTheme: ButtonTextTheme.primary,
+      ),
     );
   }
 }
@@ -549,7 +574,9 @@ class IssualDebugInfoCard extends StatelessWidget {
                         ],
                       ),
                 );
-                if (result) TodoStateChangeNotification(stateChange: 'wipe').dispatch(context);
+                if (result)
+                  TodoStateChangeNotification(stateChange: TodoStateChangeType.wipe)
+                      .dispatch(context);
               },
             ),
           ],

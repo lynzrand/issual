@@ -160,11 +160,17 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
                     style: Theme.of(context).textTheme.headline,
                     onChanged: (String str) => rawTodo['title'] = str,
                   ),
+                  // TODO: replace this with a horizontal scroller to show categpry
+                  // TODO: ADD tag selector
                   new TextField(
                     key: new Key('categoryField'),
                     controller: categoryController,
                     decoration: InputDecoration(
-                        hintText: 'Category', isDense: false, border: InputBorder.none),
+                      hintText: 'Category',
+                      isDense: false,
+                      border: InputBorder.none,
+                      prefixText: 'iL/',
+                    ),
                     onChanged: (String str) => rawTodo['category'] = str,
                   ),
                   new Container(
