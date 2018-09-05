@@ -107,7 +107,7 @@ class Filerw {
       debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
       await db.transaction((txn) async {
         await txn.execute(
-            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT )');
+            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT NOT NULL )');
         await txn.execute(
             'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT UNIQUE NOT NULL)');
         await txn.insert(todolistTableName, {

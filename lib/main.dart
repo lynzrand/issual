@@ -181,6 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
           (BuildContext context, ani1, ani2) => new IssualTodoEditorView(t.newTodo, t.rawTodo, _rw),
         ),
       ).then((dynamic data) async {
+        // TODO: URGENT Put this part into TodoEditorView, before submitting!!!
         var structuredData = data as Map<String, dynamic>;
         structuredData ??= {};
         if (structuredData['save'] == false || structuredData['save'] == null) return;

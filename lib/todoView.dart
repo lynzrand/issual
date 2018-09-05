@@ -60,7 +60,23 @@ class _IssualTodoViewState extends State<IssualTodoView> {
     return new Scaffold(
         body: new CustomScrollView(
       slivers: <Widget>[
-        new SliverAppBar(),
+        new SliverAppBar(
+          actions: <Widget>[
+            new IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: ,
+            ),
+            new PopupMenuButton(
+              icon: Icon(Icons.more_vert),
+              itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: '',
+                      child: Text('Placeholder'),
+                    )
+                  ],
+            )
+          ],
+        ),
         new SliverToBoxAdapter(
           child: new Container(
             child: Hero(
@@ -133,7 +149,9 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
           new SliverAppBar(
             leading: new IconButton(
               icon: new Icon(Icons.close),
-              onPressed: () => Navigator.pop(context, {'save': false}),
+              onPressed: () {
+                if (categoryController.text != "") Navigator.pop(context, {'save': false});
+              },
             ),
             actions: <Widget>[
               new IconButton(
@@ -155,12 +173,15 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
                   new TextField(
                     key: new Key('titleField'),
                     controller: titleController,
+                    autofocus: true,
                     decoration: InputDecoration(
                         hintText: 'Title', isDense: false, border: InputBorder.none),
                     style: Theme.of(context).textTheme.headline,
                     onChanged: (String str) => rawTodo['title'] = str,
                   ),
-                  // TODO: replace this with a horizontal scroller to show categpry
+                  // TODO: replace this with a horizontal scroller with categoty chips
+                  //        so that one cannot leave it blank
+
                   // TODO: ADD tag selector
                   new TextField(
                     key: new Key('categoryField'),
