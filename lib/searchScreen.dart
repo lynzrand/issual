@@ -15,9 +15,12 @@ class _IssualSearchScreenState extends State<IssualSearchScreen> {
   Widget build(BuildContext context) {
     // TODO: implement build
     return new Scaffold(
-      // appBar: AppBar(title: new Text('Search')),
-      body: new MaterialSearch<Todo>(
-        placeholder: 'Search',
+      appBar: AppBar(title: new Text('Search')),
+      // body: new MaterialSearch<Todo>(
+      //   placeholder: 'Search',
+      // ),
+      body: new Center(
+        child: new Text('TODO: IMPLEMENT SEARCHING'),
       ),
     );
   }

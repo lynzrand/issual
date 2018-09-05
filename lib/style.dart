@@ -13,17 +13,71 @@ class IssualColors {
     primaryColor: primary.shade50,
     scaffoldBackgroundColor: primary.shade50,
     brightness: Brightness.light,
+    accentColorBrightness: Brightness.dark,
   );
 
-  static Map<String, ThemeData> coloredThemes = <String, ThemeData>{
-    'red': ThemeData(
-      primarySwatch: Colors.red,
-      accentColor: Colors.redAccent,
-    ),
-    'blue': ThemeData(
-      primarySwatch: Colors.blue,
-      accentColor: Colors.blueAccent,
-    ),
+  /// Material Colors. Not supposed to change or delete. ONLY ADD.
+  static Map<String, Map<String, dynamic>> coloredThemes = <String, Map<String, dynamic>>{
+    'red': {
+      'primarySwatch': Colors.red,
+      'accentColor': Colors.redAccent.shade700,
+    },
+    'orange': {
+      'primarySwatch': Colors.orange,
+      'accentColor': Colors.orangeAccent.shade700,
+    },
+    'deepOrange': {
+      'primarySwatch': Colors.deepOrange,
+      'accentColor': Colors.deepOrangeAccent.shade700,
+    },
+    'amber': {
+      'primarySwatch': Colors.amber,
+      'accentColor': Colors.amberAccent.shade700,
+    },
+    'yellow': {
+      'primarySwatch': Colors.yellow,
+      'accentColor': Colors.yellowAccent.shade700,
+    },
+    'green': {
+      'primarySwatch': Colors.green,
+      'accentColor': Colors.greenAccent.shade700,
+    },
+    'lightGreen': {
+      'primarySwatch': Colors.lightGreen,
+      'accentColor': Colors.lightGreenAccent.shade700,
+    },
+    'teal': {
+      'primarySwatch': Colors.teal,
+      'accentColor': Colors.tealAccent.shade700,
+    },
+    'cyan': {
+      'primarySwatch': Colors.cyan,
+      'accentColor': Colors.cyanAccent.shade700,
+    },
+    'lightBlue': {
+      'primarySwatch': Colors.lightBlue,
+      'accentColor': Colors.lightBlueAccent.shade700,
+    },
+    'blue': {
+      'primarySwatch': Colors.blue,
+      'accentColor': Colors.blueAccent.shade700,
+    },
+    'indigo': {
+      'primarySwatch': Colors.indigo,
+      'accentColor': Colors.indigoAccent.shade700,
+    },
+    'purple': {
+      'primarySwatch': Colors.purple,
+      'accentColor': Colors.purpleAccent.shade700,
+    },
+    'deepPurple': {
+      'primarySwatch': Colors.deepPurple,
+      'accentColor': Colors.deepPurpleAccent.shade700,
+    },
+    'pink': {
+      'primarySwatch': Colors.pink,
+      'accentColor': Colors.pinkAccent.shade700,
+    },
   };
 
   static TextStyle getTodoTextStyle(BuildContext ctx, String state) {
@@ -48,5 +102,24 @@ class IssualColors {
         break;
     }
     return Theme.of(ctx).textTheme.body1.merge(ts);
+  }
+}
+
+class IssualTransitions {
+  static PageRouteBuilder verticlaPageTransition(
+      Function(BuildContext, Animation<double>, Animation<double>) pageBuilder) {
+    return new PageRouteBuilder(
+      pageBuilder: pageBuilder,
+      transitionsBuilder: (context, ani1_, ani2, Widget child) {
+        var ani1 = CurvedAnimation(curve: Curves.easeOut, parent: ani1_);
+        return new FadeTransition(
+          opacity: ani1,
+          child: new SlideTransition(
+            position: Tween(begin: Offset(0.0, 0.2), end: Offset(0.0, 0.0)).animate(ani1),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 }

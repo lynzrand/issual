@@ -152,26 +152,11 @@ class _MyHomePageState extends State<MyHomePage> {
         case 'view':
           Navigator.push(
             context,
-            new PageRouteBuilder(
-              pageBuilder: (context, ani1, ani2) {
+            IssualTransitions.verticlaPageTransition(
+              (context, ani1, ani2) {
                 return new IssualTodoView(t.id, t.data as String, _rw);
               },
-              transitionsBuilder: (context, ani1_, ani2, Widget child) {
-                var ani1 = CurvedAnimation(curve: Curves.easeOut, parent: ani1_);
-                return new FadeTransition(
-                  opacity: ani1,
-                  child: new SlideTransition(
-                    position: Tween(begin: Offset(0.0, 0.2), end: Offset(0.0, 0.0)).animate(ani1),
-                    child: child,
-                  ),
-                );
-              },
             ),
-            // MaterialPageRoute(
-            //   builder: (context) {
-            //     return new IssualTodoView(t.id, t.data as String, _rw);
-            //   },
-            // ),
           );
           break;
 
@@ -192,9 +177,8 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (t is TodoEditNotification) {
       Navigator.push(
         context,
-        new MaterialPageRoute(
-          builder: (BuildContext context) => new IssualTodoEditorView(t.newTodo, t.rawTodo),
-          fullscreenDialog: true,
+        IssualTransitions.verticlaPageTransition(
+          (BuildContext context, ani1, ani2) => new IssualTodoEditorView(t.newTodo, t.rawTodo, _rw),
         ),
       ).then((dynamic data) async {
         var structuredData = data as Map<String, dynamic>;
@@ -213,7 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
         if (categories.indexOf(todo.category) < 0) await _rw.addCategory(todo.category);
 
         await this.init(null);
-      });
+      }).catchError((e) => debugPrint(e));
       return true;
     }
   }
@@ -321,13 +305,16 @@ class TodoCard extends StatelessWidget {
 
   final String title;
   final List<Todo> todos;
-  final ThemeData themeData = IssualColors.coloredThemes['red'];
+  final Map<String, dynamic> themeColors = IssualColors.coloredThemes['blue'];
 
   @override
   Widget build(BuildContext context) {
     return Theme(
-      key: new Key('cardTheme'),
-      data: themeData,
+      key: new Key('cardTheme#$title'),
+      data: Theme.of(context).copyWith(
+        primaryColor: themeColors['primarySwatch'],
+        accentColor: themeColors['accentColor'],
+      ),
       child: new Card(
         margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: new Column(
@@ -339,11 +326,9 @@ class TodoCard extends StatelessWidget {
                   new Expanded(
                       child: new Text(
                     '$title'.toUpperCase(),
-                    style: TextStyle(
-                      color: themeData.primaryColor,
-                      fontSize: Theme.of(context).textTheme.title.fontSize,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.title.apply(
+                          color: (themeColors['primarySwatch'] as MaterialColor).shade800,
+                        ),
                   )),
                   // new IconButton(
                   //   icon: new Icon(Icons.expand_less),
@@ -354,7 +339,7 @@ class TodoCard extends StatelessWidget {
             ),
             new Column(
               children: List.generate(todos.length, (int index) {
-                return new TodoListItem(todos[index], index);
+                return new TodoListItem(todos[index], index, key: Key(todos[index].id));
               }),
             ),
             new ButtonBar(
@@ -377,7 +362,7 @@ class TodoCard extends StatelessWidget {
 }
 
 class TodoListItem extends StatefulWidget {
-  TodoListItem(final this.todo, this.index);
+  TodoListItem(final this.todo, this.index, {Key key}) : super(key: key);
 
   // TODO: move this to filerw.dart/todo
   static const stateIcons = <String, IconData>{
@@ -390,17 +375,17 @@ class TodoListItem extends StatefulWidget {
 
   final Todo todo;
   final int index;
-
   @override
   State<StatefulWidget> createState() {
-    return new _TodoListItemState(todo.state);
+    return new _TodoListItemState(todo.state, todo.id);
   }
 }
 
 class _TodoListItemState extends State<TodoListItem> {
   // TodoState state;
-  _TodoListItemState(this.state);
+  _TodoListItemState(this.state, this.id);
   String state;
+  final String id;
 
   Color getIconColor(BuildContext context, String state) {
     final theme = Theme.of(context);
@@ -419,89 +404,101 @@ class _TodoListItemState extends State<TodoListItem> {
     }
   }
 
+  void flipState() {
+    setState(() {
+      switch (state) {
+        case 'open':
+          state = 'active';
+          break;
+        case 'closed':
+        case 'canceled':
+          state = 'open';
+          break;
+        case 'active':
+        case 'pending':
+        default:
+          state = 'closed';
+          break;
+      }
+    });
+
+    TodoStateChangeNotification(
+      id: widget.todo.id,
+      stateChange: 'flip',
+      data: {'todo': widget.todo, 'index': widget.index, 'state': state},
+    ).dispatch(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return new InkWell(
-      splashColor: IssualColors.darkColorRipple,
-      // TODO: onTap: emit a notification up the tree!
-      onTap: () {
-        TodoStateChangeNotification(
-                id: widget.todo.id, stateChange: 'view', data: widget.todo.title)
-            .dispatch(context);
+    return new GestureDetector(
+      onHorizontalDragEnd: (dragDetail) {
+        if (dragDetail.primaryVelocity > 0) flipState();
       },
-      child: new Row(
-        children: <Widget>[
-          new IconButton(
+      child: InkWell(
+        splashColor: IssualColors.darkColorRipple,
+        // TODO: onTap: emit a notification up the tree!
+        onTap: () {
+          TodoStateChangeNotification(
+                  id: widget.todo.id, stateChange: 'view', data: widget.todo.title)
+              .dispatch(context);
+        },
+        child: new Row(
+          children: <Widget>[
+            new IconButton(
               icon: new Icon(
                 TodoListItem.stateIcons[state],
                 color: getIconColor(context, state),
               ),
-              onPressed: () {
-                setState(() {
-                  switch (state) {
-                    case 'open':
-                      state = 'active';
-                      break;
-                    case 'closed':
-                    case 'canceled':
-                      state = 'open';
-                      break;
-                    case 'active':
-                    case 'pending':
-                    default:
-                      state = 'closed';
-                      break;
-                  }
-                });
-
-                TodoStateChangeNotification(
-                  id: widget.todo.id,
-                  stateChange: 'flip',
-                  data: {'todo': widget.todo, 'index': widget.index, 'state': state},
-                ).dispatch(context);
-              }),
-          new Expanded(
-            child:
-                // TODO: Really, show tags?
-                //
-                // Column(
-                //   crossAxisAlignment: CrossAxisAlignment.start,
-                //   children: [
-                new Hero(
-              tag: this.widget.todo.id + 'title',
-              child: new Text(
-                this.widget.todo.title ?? '#${this.widget.todo.id}',
-                style: IssualColors.getTodoTextStyle(context, state),
+              onPressed: () => flipState(),
+              tooltip: 'Flip Todo state',
+            ),
+            new Expanded(
+              child: new Hero(
+                tag: this.widget.todo.id + 'title',
+                child: new Text(
+                  this.widget.todo.title ?? '#${this.widget.todo.id}',
+                  style: IssualColors.getTodoTextStyle(context, state),
+                ),
               ),
             ),
-            // new Wrap(
-            //   children: <Widget>[
-            //     new Chip(
-            //       label: Text("Tag"),
-            //       labelPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: -2.0),
-            //     ),
-            //   ],
-            //   )
-            // ],
-            // ),
-          ),
-          new PopupMenuButton(
-            icon: new Icon(Icons.more_horiz),
-            itemBuilder: (BuildContext context) {
-              return [PopupMenuItem(value: 'remove', child: new Text('Remove'))];
-            },
-            onSelected: (dynamic item) {
-              switch (item as String) {
-                case 'remove':
-                  TodoStateChangeNotification(
-                      id: widget.todo.id,
-                      stateChange: 'remove',
-                      data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
-                  break;
-              }
-            },
-          )
-        ],
+            new PopupMenuButton(
+              icon: new Icon(Icons.more_horiz),
+              // itemBuilder: ,
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem(
+                    value: 'remove',
+                    child:
+                        // new Row(children: [new Icon(Icons.delete),
+                        Text('Remove'),
+                    //  ]),
+                  ),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child:
+                        // new Row(children: [new Icon(Icons.edit),
+                        new Text('Edit'),
+                    //  ]),
+                  )
+                ];
+              },
+              onSelected: (dynamic item) {
+                switch (item as String) {
+                  case 'remove':
+                    TodoStateChangeNotification(
+                        id: widget.todo.id,
+                        stateChange: 'remove',
+                        data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
+                    break;
+                  case 'edit':
+                    TodoEditNotification(rawTodo: widget.todo.toMap()).dispatch(context);
+                    break;
+                }
+              },
+            )
+          ],
+        ),
       ),
     );
   }

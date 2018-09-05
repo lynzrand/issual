@@ -45,8 +45,8 @@ class _IssualTodoViewState extends State<IssualTodoView> {
     Duration timeFromNow = DateTime.now().difference(time);
     if (timeFromNow.compareTo(Duration(minutes: 2)) < 0) {
       return 'just now';
-    } else if (timeFromNow.compareTo(Duration(hours: 1)) < 0) {
-      return '${timeFromNow.inMinutes} minutes ago';
+    } else if (timeFromNow.compareTo(Duration(hours: 2)) < 0) {
+      return '${timeFromNow.inMinutes + timeFromNow.inHours * 60} minutes ago';
     } else if (timeFromNow.compareTo(Duration(days: 1)) < 0) {
       return '${timeFromNow.inHours} hours ago';
     } else {
@@ -65,10 +65,7 @@ class _IssualTodoViewState extends State<IssualTodoView> {
           child: new Container(
             child: Hero(
               tag: widget.id + 'title',
-              child: Text(
-                this.title,
-                style: Theme.of(context).textTheme.display1,
-              ),
+              child: Text(this.title, style: Theme.of(context).textTheme.headline),
             ),
             padding: EdgeInsets.all(16.0),
           ),
@@ -95,73 +92,97 @@ class _IssualTodoViewState extends State<IssualTodoView> {
 }
 
 class IssualTodoEditorView extends StatefulWidget {
-  IssualTodoEditorView(this.isNew, this.rawTodo);
+  IssualTodoEditorView(this.isNew, this.rawTodo, this.rw);
   final bool isNew;
   final Map<String, dynamic> rawTodo;
+  final Filerw rw;
 
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return new _IssualTodoEditorViewState(rawTodo);
+    return new _IssualTodoEditorViewState(rawTodo, rw);
   }
 }
 
 class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
-  _IssualTodoEditorViewState(this.rawTodo) {
+  _IssualTodoEditorViewState(this.rawTodo, this.rw) {
     this.rawTodo ??= {'state': 'open', 'category': 'todo'};
+    titleController = new TextEditingController(text: rawTodo['title'] as String);
+    categoryController = new TextEditingController(text: rawTodo['category'] as String);
+    if (this.rawTodo['id'] != null)
+      rw.getTodoById(this.rawTodo['id']).then((data) {
+        setState(() {
+          this.rawTodo = data.toMap();
+          descController = new TextEditingController(text: rawTodo['desc'] as String);
+        });
+      });
   }
 
   Map<String, dynamic> rawTodo;
+  Filerw rw;
+
+  TextEditingController titleController;
+  TextEditingController categoryController;
+  TextEditingController descController;
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      appBar: new AppBar(
-        leading: new IconButton(
-          icon: new Icon(Icons.close),
-          onPressed: () => Navigator.pop(context, {'save': false}),
-        ),
-        actions: <Widget>[
-          new IconButton(
-            icon: new Icon(Icons.check),
-            //  onPressed: () => debugPrint(rawTodo.toString()),
-            onPressed: () => Navigator.pop(
-                  context,
-                  {'save': true, 'data': rawTodo, 'isNew': widget.isNew},
-                ),
-          ),
-        ],
-      ),
-      body: new SingleChildScrollView(
-        child: new Padding(
-          padding: new EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              new TextField(
-                key: new Key('titleField'),
-                decoration:
-                    InputDecoration(hintText: 'Title', isDense: false, border: InputBorder.none),
-                style: Theme.of(context).textTheme.display1,
-                onChanged: (String str) => rawTodo['title'] = str,
-              ),
-              new TextField(
-                key: new Key('categoryField'),
-                decoration:
-                    InputDecoration(hintText: 'Category', isDense: false, border: InputBorder.none),
-                onChanged: (String str) => rawTodo['category'] = str,
-              ),
-              new Container(
-                constraints: new BoxConstraints(minHeight: 240.0),
-                child: new TextField(
-                  key: new Key('descField'),
-                  decoration: InputDecoration(hintText: 'Description', border: InputBorder.none),
-                  maxLines: null,
-                  onChanged: (String str) => rawTodo['desc'] = str,
-                ),
+      body: new CustomScrollView(
+        slivers: <Widget>[
+          new SliverAppBar(
+            leading: new IconButton(
+              icon: new Icon(Icons.close),
+              onPressed: () => Navigator.pop(context, {'save': false}),
+            ),
+            actions: <Widget>[
+              new IconButton(
+                icon: new Icon(Icons.check),
+                //  onPressed: () => debugPrint(rawTodo.toString()),
+                onPressed: () => Navigator.pop(
+                      context,
+                      {'save': true, 'data': rawTodo, 'isNew': widget.isNew},
+                    ),
               ),
             ],
+            pinned: true,
           ),
-        ),
+          new SliverToBoxAdapter(
+            child: new Padding(
+              padding: new EdgeInsets.all(16.0),
+              child: Column(
+                children: <Widget>[
+                  new TextField(
+                    key: new Key('titleField'),
+                    controller: titleController,
+                    decoration: InputDecoration(
+                        hintText: 'Title', isDense: false, border: InputBorder.none),
+                    style: Theme.of(context).textTheme.headline,
+                    onChanged: (String str) => rawTodo['title'] = str,
+                  ),
+                  new TextField(
+                    key: new Key('categoryField'),
+                    controller: categoryController,
+                    decoration: InputDecoration(
+                        hintText: 'Category', isDense: false, border: InputBorder.none),
+                    onChanged: (String str) => rawTodo['category'] = str,
+                  ),
+                  new Container(
+                    constraints: new BoxConstraints(minHeight: 240.0),
+                    child: new TextField(
+                      key: new Key('descField'),
+                      controller: descController,
+                      decoration:
+                          InputDecoration(hintText: 'Description', border: InputBorder.none),
+                      maxLines: null,
+                      onChanged: (String str) => rawTodo['desc'] = str,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -41,7 +41,7 @@ class Todo {
 
     this.title = rawTodo['title'];
     this.state = rawTodo['state'];
-    this.desc = rawTodo['desc'];
+    this.desc = rawTodo['desc'] == "" ? null : rawTodo['desc'];
     this.tags = rawTodo['tags'] == null ? null : (rawTodo['tags'] as String).split('+');
     this.category = rawTodo['category'];
     debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
@@ -55,7 +55,8 @@ class Todo {
     var map = new Map<String, dynamic>();
     map['id'] = this.id;
     map['title'] = this.title;
-    map['desc'] = this.desc;
+    map['desc'] = this.desc == '' ? null : this.desc;
+    // if(this.desc == "") map['desc'] = null;
     map['ddl'] = this.ddl;
     map['tags'] = this.tags == null ? null : this.tags.join('+');
     map['category'] = this.category;
@@ -255,7 +256,7 @@ class Filerw {
 
   Future<Todo> getTodoById(String id) async {
     Todo todo;
-    todo = (await this._db.query(todolistTableName, where: 'id == "$id"'))[0] as Todo;
+    todo = Todo(rawTodo: (await this._db.query(todolistTableName, where: 'id == "$id"'))[0]);
     return todo;
   }
 
@@ -290,8 +291,13 @@ class Filerw {
         'INSERT OR REPLACE INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
   }
 
+  Future<void> flashCategoriesWithBatch(Batch bat) async {
+    bat.rawInsert(
+        'INSERT OR REPLACE INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
+  }
+
   Future<List<String>> getCategories() async {
-    await flashCategories();
+    // await flashCategories();
     var rawCategories = await _db.query(categoryTableName, columns: ['category']);
     List<String> categories = [];
     for (var raw in rawCategories) categories.add(raw['category'].toString());
