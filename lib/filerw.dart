@@ -42,6 +42,7 @@ class Todo {
     this.title = rawTodo['title'];
     this.state = rawTodo['state'];
     this.desc = rawTodo['desc'];
+    this.tags = rawTodo['tags'] == null ? null : (rawTodo['tags'] as String).split('+');
     this.category = rawTodo['category'];
     debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
   }
@@ -56,6 +57,7 @@ class Todo {
     map['title'] = this.title;
     map['desc'] = this.desc;
     map['ddl'] = this.ddl;
+    map['tags'] = this.tags == null ? null : this.tags.join('+');
     map['category'] = this.category;
     map['state'] = this.state;
     // debugPrint('ToMap called on Todo $id');

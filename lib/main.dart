@@ -150,9 +150,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
         /// VIEW: navigate to Todo whose id == t.id
         case 'view':
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return new IssualTodoView(t.id, t.data as String, _rw);
-          }));
+          Navigator.push(
+            context,
+            new PageRouteBuilder(
+              pageBuilder: (context, ani1, ani2) {
+                return new IssualTodoView(t.id, t.data as String, _rw);
+              },
+              transitionsBuilder: (context, ani1_, ani2, Widget child) {
+                var ani1 = CurvedAnimation(curve: Curves.easeOut, parent: ani1_);
+                return new FadeTransition(
+                  opacity: ani1,
+                  child: new SlideTransition(
+                    position: Tween(begin: Offset(0.0, 0.2), end: Offset(0.0, 0.0)).animate(ani1),
+                    child: child,
+                  ),
+                );
+              },
+            ),
+            // MaterialPageRoute(
+            //   builder: (context) {
+            //     return new IssualTodoView(t.id, t.data as String, _rw);
+            //   },
+            // ),
+          );
           break;
 
         /// REMOVE: delete this Todo item.
@@ -174,6 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
         context,
         new MaterialPageRoute(
           builder: (BuildContext context) => new IssualTodoEditorView(t.newTodo, t.rawTodo),
+          fullscreenDialog: true,
         ),
       ).then((dynamic data) async {
         var structuredData = data as Map<String, dynamic>;
@@ -185,15 +206,14 @@ class _MyHomePageState extends State<MyHomePage> {
           isNewTodo: structuredData['isNew'] as bool,
         );
         if (structuredData['isNew'] as bool)
-          await _rw.postTodo(todo: todo).catchError((e) => debugPrint(e.toString()));
+          await _rw.postTodo(todo: todo);
         else
           await _rw.updateTodo(structuredData['data']['id'], todo);
 
-        if (categories.indexOf(todo.category) < 0)
-          await _rw.addCategory(todo.category).catchError((e) => debugPrint(e.toString()));
+        if (categories.indexOf(todo.category) < 0) await _rw.addCategory(todo.category);
 
-        await this.init(null).catchError((e) => debugPrint(e.toString()));
-      }).catchError((e) => debugPrint(e.toString()));
+        await this.init(null);
+      });
       return true;
     }
   }
@@ -313,15 +333,17 @@ class TodoCard extends StatelessWidget {
         child: new Column(
           children: <Widget>[
             new Padding(
-              padding: new EdgeInsets.fromLTRB(24.0, 0.0, 0.0, 0.0),
+              padding: new EdgeInsets.all(16.0),
               child: new Row(
                 children: <Widget>[
                   new Expanded(
                       child: new Text(
-                    '$title',
+                    '$title'.toUpperCase(),
                     style: TextStyle(
-                        color: themeData.primaryColor,
-                        fontSize: Theme.of(context).textTheme.display1.fontSize),
+                      color: themeData.primaryColor,
+                      fontSize: Theme.of(context).textTheme.title.fontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
                   )),
                   // new IconButton(
                   //   icon: new Icon(Icons.expand_less),
@@ -515,20 +537,21 @@ class IssualDebugInfoCard extends StatelessWidget {
               title: Text('Database Loaded: $rwInitialized'),
               onLongPress: () async {
                 var result = await showDialog(
-                    context: context,
-                    builder: (context) => new AlertDialog(
-                          title: Text('Wipe the database?'),
-                          actions: <Widget>[
-                            FlatButton(
-                              child: Text('YES'),
-                              onPressed: () => Navigator.pop(context, true),
-                            ),
-                            FlatButton(
-                              child: Text('NO'),
-                              onPressed: () => Navigator.pop(context, false),
-                            ),
-                          ],
-                        ));
+                  context: context,
+                  builder: (context) => new AlertDialog(
+                        title: Text('Wipe the database?'),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text('NO'),
+                            onPressed: () => Navigator.pop(context, false),
+                          ),
+                          FlatButton(
+                            child: Text('YES'),
+                            onPressed: () => Navigator.pop(context, true),
+                          ),
+                        ],
+                      ),
+                );
                 if (result) TodoStateChangeNotification(stateChange: 'wipe').dispatch(context);
               },
             ),

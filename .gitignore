@@ -1,12 +1,17 @@
 .DS_Store
 .dart_tool/
 
+# app key
 android/key.properties
 
 .packages
 .pub/
 
+# built items
 build/
 
 .flutter-plugins
 log.txt
+
+# screenshots
+flutter_*.png

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_search/material_search.dart';
+import 'filerw.dart';
 
 class IssualSearchScreen extends StatefulWidget {
   @override
@@ -15,7 +16,7 @@ class _IssualSearchScreenState extends State<IssualSearchScreen> {
     // TODO: implement build
     return new Scaffold(
       // appBar: AppBar(title: new Text('Search')),
-      body: new MaterialSearch(
+      body: new MaterialSearch<Todo>(
         placeholder: 'Search',
       ),
     );
