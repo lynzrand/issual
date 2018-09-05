@@ -249,11 +249,6 @@ class _MyHomePageState extends State<MyHomePage> {
         //     )
         //   ],
         // ),
-        drawer: new Drawer(
-          child: new Text(
-            "data",
-          ),
-        ),
         floatingActionButton: new IssualFAB(),
       ),
     );
