@@ -70,131 +70,97 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _notificationHandler(Notification t) {
     debugPrint(t.toString());
 
-    // BROKEN CODE! FIXME:
-    //
-    // if (t is UserScrollNotification) {
-    //   double toScroll = widget.homeScrlCtrl.position.maxScrollExtent -
-    //       widget.homeScrlCtrl.position.viewportDimension +
-    //       360;
-    //   double offset = widget.homeScrlCtrl.offset;
-    //   // debugPrint('Notification at $offset; To match: $toScroll');
-    //   /*
-    //    * FIXME: The following assertion was thrown while handling a gesture:
-    //    * 'package:flutter/src/widgets/scrollable.dart': Failed assertion:
-    //    * line 445 pos 12: '_hold == null': is not true.
-    //    *
-    //    * TODO: replace this with ScrollPhysics if possible!
-    //    * Note: This bug DOES NOT affect release versions of the app.
-    //    *
-    //    * An issue has already been posted on Github at
-    //    * https://github.com/flutter/flutter/issues/14452.
-    //    * No official fixes has been released though.
-    //    * USE WITH CAUTION!
-    //    */
-    //   if (toScroll < offset && widget.homeScrlCtrl.position.maxScrollExtent - offset >= 120.0) {
-    //     widget.homeScrlCtrl.animateTo(
-    //       toScroll,
-    //       duration: new Duration(milliseconds: 250),
-    //       curve: Curves.easeOut,
-    //     );
-    //     debugPrint('Hiding Scroll fired @$offset');
-    //     setState(() {
-    //       foundEasterEgg = false;
-    //     });
-    //   } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset < 120.0 &&
-    //       widget.homeScrlCtrl.position.maxScrollExtent - offset > 0) {
-    //     widget.homeScrlCtrl.animateTo(
-    //       widget.homeScrlCtrl.position.maxScrollExtent,
-    //       duration: new Duration(milliseconds: 125),
-    //       curve: Curves.easeOut,
-    //     );
-    //     setState(() {
-    //       foundEasterEgg = true;
-    //     });
-    //     return true;
-    //   } else if (widget.homeScrlCtrl.position.maxScrollExtent - offset == 0) {
-    //     setState(() {
-    //       foundEasterEgg = true;
-    //     });
-    //   } else {
-    //     setState(() {
-    //       foundEasterEgg = false;
-    //     });
-    //   }
-    //   return true;
-    // } else
     if (t is TodoStateChangeNotification) {
-      switch (t.stateChange) {
-
-        /// FLIP: flip Todo's state
-        /// e.g.
-        ///   open, active, pending => closed
-        ///   closed, canceled => open
-        case TodoStateChangeType.flip:
-          // TODO: implement FLIP
-          Todo todo = t.data['todo'] as Todo;
-          // setState() called at TodoListItem
-          // this.setState(() {
-          //   displayedTodos[todo.category][t.data['index']].state = t.data['state'];
-          // });
-          todo.state = t.data['state'];
-          _rw.updateTodo(todo.id, todo);
-          break;
-
-        /// ADD: add Todo in t.data to database
-        case TodoStateChangeType.add:
-          this.setState(() {
-            this.displayedTodos[t.data.category] ??= [];
-            this.displayedTodos[t.data.category].insert(0, t.data as Todo);
-          });
-          _rw.postTodo(todo: t.data as Todo);
-          break;
-
-        /// VIEW: navigate to Todo whose id == t.id
-        case TodoStateChangeType.view:
-          Navigator.push(
-            context,
-            IssualTransitions.verticlaPageTransition(
-              (context, ani1, ani2) {
-                return new IssualTodoView(t.id, t.data as String, _rw);
-              },
-            ),
-          );
-          break;
-
-        /// REMOVE: delete this Todo item.
-        case TodoStateChangeType.remove:
-          setState(() {
-            displayedTodos[(t.data['todo'] as Todo).category].removeAt(t.data['index']);
-          });
-          _rw.removeTodo(id: t.id);
-          break;
-
-        /// WIPE: DANGEROUS Wipe out the whole database
-        case TodoStateChangeType.wipe:
-          _rw.init(deleteCurrentDatabase: true).then(this.init);
-          break;
-      }
+      todoStateChangeHandler(t);
       return true;
     } else if (t is TodoEditNotification) {
-      Navigator.push(
-        context,
-        IssualTransitions.verticlaPageTransition(
-          (BuildContext context, ani1, ani2) => new IssualTodoEditorView(t.newTodo, t.rawTodo, _rw),
-        ),
-      ).then((dynamic data) async {
-        await this.init(null);
-      }).catchError((e) => debugPrint(e));
+      todoEditHandler(t);
       return true;
     } else if (t is TodoCategoryChangeNotification) {
       switch (t.type) {
         case TodoCategoryChangeType.add:
+          showDialog<String>(
+              context: context,
+              builder: (context) {
+                return new IssualNewCategoryDialog();
+              }).then((result) {
+            // await _rw.addCategory(
 
+            // );
+          });
+          break;
         default:
           debugPrint('Method for ${t.type} not implemented yet.');
           break;
       }
     }
+  }
+
+  void todoStateChangeHandler(TodoStateChangeNotification t) {
+    switch (t.stateChange) {
+
+      /// FLIP: flip Todo's state
+      /// e.g.
+      ///   open, active, pending => closed
+      ///   closed, canceled => open
+      case TodoStateChangeType.flip:
+        // TODO: implement FLIP
+        Todo todo = t.data['todo'] as Todo;
+        // setState() called at TodoListItem
+        // this.setState(() {
+        //   displayedTodos[todo.category][t.data['index']].state = t.data['state'];
+        // });
+        todo.state = t.data['state'];
+        _rw.updateTodo(todo.id, todo);
+        break;
+
+      /// ADD: add Todo in t.data to database
+      case TodoStateChangeType.add:
+        this.setState(() {
+          this.displayedTodos[t.data.category] ??= [];
+          this.displayedTodos[t.data.category].insert(0, t.data as Todo);
+        });
+        _rw.postTodo(todo: t.data as Todo);
+        break;
+
+      /// VIEW: navigate to Todo whose id == t.id
+      case TodoStateChangeType.view:
+        Navigator.push(
+          context,
+          IssualTransitions.verticlaPageTransition(
+            (context, ani1, ani2) {
+              return new IssualTodoView(t.id, t.data as String, _rw);
+            },
+          ),
+        );
+        break;
+
+      /// REMOVE: delete this Todo item.
+      case TodoStateChangeType.remove:
+        setState(() {
+          displayedTodos[(t.data['todo'] as Todo).category].removeAt(t.data['index']);
+        });
+        _rw.removeTodo(id: t.id);
+        break;
+
+      // /// WIPE: DANGEROUS Wipe out the whole database
+      // case TodoStateChangeType.wipe:
+      //   _rw.init(deleteCurrentDatabase: true).then(this.init);
+      //   break;
+      default:
+        break;
+    }
+  }
+
+  void todoEditHandler(TodoEditNotification t) {
+    Navigator.push(
+      context,
+      IssualTransitions.verticlaPageTransition(
+        (BuildContext context, ani1, ani2) => new IssualTodoEditorView(t.newTodo, t.rawTodo, _rw),
+      ),
+    ).then((dynamic data) async {
+      await this.init(null);
+    }).catchError((e) => debugPrint(e));
   }
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
@@ -314,6 +280,92 @@ class IssualNewCategoryButton extends StatelessWidget {
             TodoCategoryChangeNotification(type: TodoCategoryChangeType.add).dispatch(context),
         color: Theme.of(context).accentColor,
         textTheme: ButtonTextTheme.primary,
+      ),
+    );
+  }
+}
+
+class IssualNewCategoryDialog extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return new _IssualNewCategoryDialogState();
+  }
+}
+
+class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
+  String text;
+  var controller = new TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Dialog(
+      child: new SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            new Container(
+              padding: EdgeInsets.all(16.0),
+              child: new Text(
+                'Create new category',
+                style: Theme.of(context).textTheme.title,
+              ),
+            ),
+            new Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextFormField(
+                controller: controller,
+                decoration: InputDecoration(hintText: 'Category name'),
+                validator: (text) => text == "" ? 'Category name must not be empty' : null,
+                onSaved: (str) => text = str,
+              ),
+            ),
+            new Container(
+              padding: EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 16.0),
+              child: Text(
+                'Theme Color:',
+                style: Theme.of(context).textTheme.subhead,
+              ),
+            ),
+            new Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: new GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 2.0,
+                  crossAxisSpacing: 2.0,
+                ),
+                itemBuilder: (context, index) {
+                  var key = IssualColors.coloredThemes.keys.elementAt(index);
+                  return new GridTile(
+                    child: Container(
+                      child: Material(
+                        color: IssualColors.coloredThemes[key]['primarySwatch'] as MaterialColor,
+                      ),
+                    ),
+                  );
+                },
+                shrinkWrap: true,
+                itemCount: IssualColors.coloredThemes.keys.length,
+              ),
+              constraints: BoxConstraints(maxHeight: 480.0),
+            ),
+            new ButtonBar(
+              children: <Widget>[
+                new FlatButton(
+                  child: Text('OK'),
+                  onPressed: () => Navigator.pop(context, text),
+                ),
+                new FlatButton(
+                  child: Text('Cancel'),
+                  onPressed: () => Navigator.pop(context, null),
+                ),
+              ],
+            ),
+          ],
+          mainAxisSize: MainAxisSize.min,
+        ),
       ),
     );
   }
