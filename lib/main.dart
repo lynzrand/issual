@@ -4,8 +4,8 @@ import 'dart:async';
 import 'filerw.dart';
 import 'dart:math';
 import './style.dart';
-import './searchScreen.dart';
-import './todoView.dart';
+import './search_screen.dart';
+import './todo_view.dart';
 import './notifications.dart';
 
 void main() {
@@ -350,13 +350,6 @@ class TodoListItem extends StatefulWidget {
   TodoListItem(final this.todo, this.index, {Key key}) : super(key: key);
 
   // TODO: move this to filerw.dart/todo
-  static const stateIcons = <String, IconData>{
-    'open': Icons.radio_button_unchecked,
-    'closed': Icons.check_circle_outline,
-    'pending': Icons.access_time,
-    'active': Icons.data_usage,
-    'canceled': Icons.remove_circle_outline,
-  };
 
   final Todo todo;
   final int index;
@@ -371,23 +364,6 @@ class _TodoListItemState extends State<TodoListItem> {
   _TodoListItemState(this.state, this.id);
   String state;
   final String id;
-
-  Color getIconColor(BuildContext context, String state) {
-    final theme = Theme.of(context);
-    switch (state) {
-      case 'open':
-        return theme.primaryColor;
-        break;
-      case 'closed':
-      case 'finished':
-        return theme.disabledColor;
-        break;
-      case 'active':
-      case 'pending':
-        return theme.accentColor;
-        break;
-    }
-  }
 
   void flipState() {
     setState(() {
@@ -434,8 +410,8 @@ class _TodoListItemState extends State<TodoListItem> {
           children: <Widget>[
             new IconButton(
               icon: new Icon(
-                TodoListItem.stateIcons[state],
-                color: getIconColor(context, state),
+                IssualMisc.stateIcons[state],
+                color: IssualMisc.getColorForState(context, state),
               ),
               onPressed: () => flipState(),
               tooltip: 'Flip Todo state',
@@ -445,7 +421,7 @@ class _TodoListItemState extends State<TodoListItem> {
                 tag: this.widget.todo.id + 'title',
                 child: new Text(
                   this.widget.todo.title ?? '#${this.widget.todo.id}',
-                  style: IssualColors.getTodoTextStyle(context, state),
+                  style: IssualMisc.getTodoTextStyle(context, state),
                 ),
               ),
             ),

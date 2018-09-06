@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ulid/ulid.dart';
-import 'style.dart';
 import 'dart:async';
 import 'dart:math';
+import 'style.dart';
 import 'filerw.dart';
 
 class IssualTodoView extends StatefulWidget {
@@ -20,8 +20,10 @@ class IssualTodoView extends StatefulWidget {
 
 class _IssualTodoViewState extends State<IssualTodoView> {
   _IssualTodoViewState(this.id, this._rw, this.title) {
-    this.init(id);
+    this.mainTodo = Todo(
+        isNewTodo: false, rawTodo: {'id': this.id, 'title': this.title, 'state': '', 'desc': ''});
     this.creationTime = new DateTime.fromMillisecondsSinceEpoch(Ulid.parse(this.id).toMillis());
+    this.init(id);
   }
   Future<void> init(String id) async {
     debugPrint('Initializing with Todo $id');
@@ -41,25 +43,12 @@ class _IssualTodoViewState extends State<IssualTodoView> {
 
   final emptyTodoDescription = 'This todo has no description.';
 
-  String getReadableTimeRepresentation(DateTime time) {
-    if (time == null) return 'at unknown time';
-    Duration timeFromNow = DateTime.now().difference(time);
-    if (timeFromNow.compareTo(Duration(minutes: 2)) < 0) {
-      return 'just now';
-    } else if (timeFromNow.compareTo(Duration(hours: 2)) < 0) {
-      return '${timeFromNow.inMinutes + timeFromNow.inHours * 60} minutes ago';
-    } else if (timeFromNow.compareTo(Duration(days: 1)) < 0) {
-      return '${timeFromNow.inHours} hours ago';
-    } else {
-      return 'at ${time.year}-${time.month}-${time.day}';
-    }
-  }
-
   void postEdit() {
     Navigator.push(
       context,
       IssualTransitions.verticlaPageTransition(
-        (BuildContext context, ani1, ani2) => new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
+        (BuildContext context, ani1, ani2) =>
+            new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
       ),
     ).then((_) => this.init(id));
   }
@@ -98,10 +87,46 @@ class _IssualTodoViewState extends State<IssualTodoView> {
         ),
         new SliverToBoxAdapter(
           child: new Container(
-            padding: EdgeInsets.all(16.0),
-            child: new Text(
-              'Created ${getReadableTimeRepresentation(this.creationTime)} | ${this.id}',
-              style: Theme.of(context).textTheme.caption,
+            padding: EdgeInsets.all(8.0),
+            child: new Row(
+              children: [
+                new Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
+                      width: 2.0,
+                    ),
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  padding: EdgeInsets.all(8.0),
+                  margin: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: new Text(
+                    mainTodo.state.toUpperCase(),
+                    style: Theme.of(context).textTheme.body2.apply(
+                          color: IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
+                        ),
+                  ),
+                  //  new Row(children: [
+                  //   new Icon(
+                  //     IssualMisc.stateIcons[mainTodo.state],
+                  //     semanticLabel: 'open',
+                  //   ),
+                  // ]),
+                ),
+                new Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    new Text(
+                      IssualMisc.getReadableTimeRepresentation(creationTime),
+                      style: Theme.of(context).textTheme.caption,
+                    ),
+                    new Text(
+                      mainTodo.id,
+                      style: Theme.of(context).textTheme.caption,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

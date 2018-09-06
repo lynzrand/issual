@@ -79,6 +79,59 @@ class IssualColors {
       'accentColor': Colors.pinkAccent.shade700,
     },
   };
+}
+
+class IssualTransitions {
+  static PageRouteBuilder verticlaPageTransition(
+      Function(BuildContext, Animation<double>, Animation<double>) pageBuilder) {
+    return new PageRouteBuilder(
+      pageBuilder: pageBuilder,
+      transitionsBuilder: (context, ani1_, ani2, Widget child) {
+        var ani1 = CurvedAnimation(curve: Curves.easeOut, parent: ani1_);
+        return new FadeTransition(
+          opacity: ani1,
+          child: new SlideTransition(
+            position: Tween(begin: Offset(0.0, 0.2), end: Offset(0.0, 0.0)).animate(ani1),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class IssualMisc {
+  static String getReadableTimeRepresentation(DateTime time, [bool withPrefix = false]) {
+    if (time == null) return 'at unknown time';
+    Duration timeFromNow = DateTime.now().difference(time);
+    if (timeFromNow.compareTo(Duration(minutes: 2)) < 0) {
+      return 'just now';
+    } else if (timeFromNow.compareTo(Duration(minutes: 90)) < 0) {
+      return '${withPrefix ? "at " : ""}${timeFromNow.inMinutes + timeFromNow.inHours * 60} minutes ago';
+    } else if (timeFromNow.compareTo(Duration(days: 1)) < 0) {
+      return '${withPrefix ? "at " : ""}${timeFromNow.inHours} hours ago';
+    } else {
+      return '${withPrefix ? "at " : ""}${time.year}-${time.month}-${time.day}';
+    }
+  }
+
+  static Color getColorForState(BuildContext context, String state) {
+    final theme = Theme.of(context);
+    switch (state) {
+      case 'closed':
+      case 'finished':
+        return theme.disabledColor;
+        break;
+      case 'active':
+      case 'pending':
+        return theme.accentColor;
+        break;
+      case 'open':
+      default:
+        return theme.primaryColor;
+        break;
+    }
+  }
 
   static TextStyle getTodoTextStyle(BuildContext ctx, String state) {
     TextStyle ts;
@@ -103,23 +156,28 @@ class IssualColors {
     }
     return Theme.of(ctx).textTheme.body1.merge(ts);
   }
-}
 
-class IssualTransitions {
-  static PageRouteBuilder verticlaPageTransition(
-      Function(BuildContext, Animation<double>, Animation<double>) pageBuilder) {
-    return new PageRouteBuilder(
-      pageBuilder: pageBuilder,
-      transitionsBuilder: (context, ani1_, ani2, Widget child) {
-        var ani1 = CurvedAnimation(curve: Curves.easeOut, parent: ani1_);
-        return new FadeTransition(
-          opacity: ani1,
-          child: new SlideTransition(
-            position: Tween(begin: Offset(0.0, 0.2), end: Offset(0.0, 0.0)).animate(ani1),
-            child: child,
-          ),
-        );
-      },
-    );
+  static Color getColorForStateDesaturated(BuildContext context, String state) {
+    final theme = Theme.of(context);
+    switch (state) {
+      case 'closed':
+      case 'finished':
+        return theme.disabledColor;
+        break;
+      case 'open':
+      case 'active':
+      case 'pending':
+      default:
+        return theme.textTheme.body1.color;
+        break;
+    }
   }
+
+  static const stateIcons = <String, IconData>{
+    'open': Icons.radio_button_unchecked,
+    'closed': Icons.check_circle_outline,
+    'pending': Icons.access_time,
+    'active': Icons.data_usage,
+    'canceled': Icons.remove_circle_outline,
+  };
 }
