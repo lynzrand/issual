@@ -107,9 +107,9 @@ class IssualMisc {
     if (timeFromNow.compareTo(Duration(minutes: 2)) < 0) {
       return 'just now';
     } else if (timeFromNow.compareTo(Duration(minutes: 90)) < 0) {
-      return '${withPrefix ? "at " : ""}${timeFromNow.inMinutes + timeFromNow.inHours * 60} minutes ago';
+      return '${timeFromNow.inMinutes + timeFromNow.inHours * 60} minutes ago';
     } else if (timeFromNow.compareTo(Duration(days: 1)) < 0) {
-      return '${withPrefix ? "at " : ""}${timeFromNow.inHours} hours ago';
+      return '${timeFromNow.inHours} hours ago';
     } else {
       return '${withPrefix ? "at " : ""}${time.year}-${time.month}-${time.day}';
     }

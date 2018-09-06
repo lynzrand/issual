@@ -184,7 +184,15 @@ class _MyHomePageState extends State<MyHomePage> {
         await this.init(null);
       }).catchError((e) => debugPrint(e));
       return true;
-    } else if (t is TodoCategoryChangeNotification) {}
+    } else if (t is TodoCategoryChangeNotification) {
+      switch (t.type) {
+        case TodoCategoryChangeType.add:
+
+        default:
+          debugPrint('Method for ${t.type} not implemented yet.');
+          break;
+      }
+    }
   }
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
@@ -511,6 +519,12 @@ class IssualDebugInfoCard extends StatelessWidget {
         margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: new Column(
           children: <Widget>[
+            new ListTile(
+              title: Text(
+                'You are running a public beta version of iL!',
+                style: Theme.of(context).textTheme.body2,
+              ),
+            ),
             new ListTile(
               title: Text('Database Loaded: $rwInitialized'),
               onLongPress: () async {

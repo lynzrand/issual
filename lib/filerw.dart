@@ -42,9 +42,11 @@ class Todo {
     this.title = rawTodo['title'];
     this.state = rawTodo['state'];
     this.desc = rawTodo['desc'] == "" ? null : rawTodo['desc'];
-    this.tags = rawTodo['tags'] == null ? null : (rawTodo['tags'] as String).split('+');
+    // this.tags = rawTodo['tags'] == null ? null : (rawTodo['tags'] as String).split('+');
     this.category = rawTodo['category'];
-    debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
+
+    // Dude, you can rest now.
+    // debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
   }
 
   void changeState(String state) {
@@ -58,7 +60,7 @@ class Todo {
     map['desc'] = this.desc == '' ? null : this.desc;
     // if(this.desc == "") map['desc'] = null;
     map['ddl'] = this.ddl;
-    map['tags'] = this.tags == null ? null : this.tags.join('+');
+    // map['tags'] = this.tags == null ? null : this.tags.join('+');
     map['category'] = this.category;
     map['state'] = this.state;
     // debugPrint('ToMap called on Todo $id');
@@ -78,8 +80,22 @@ class Filerw {
 
   final String todolistTableName = 'Todolist';
   final String categoryTableName = 'Categories';
+  final String tagsTableName = 'Tags';
+  final String todoTagsJoinTableName = 'TodoTagsJoin';
+  final String todoCategoryJoinTableName = 'TodoCategoryJoin';
+
+  final firstRawTodo = {
+    'id': '00000000000000000000000000',
+    'title': 'Hey, there!',
+    'category': 'todo',
+    'tags': 'intro',
+    'state': 'active',
+    'desc':
+        'Hi, It seems this is the first time you use iL. Go check out the [docs](https://github.com/01010101lzy/issual/blob/master/docs/readme.md) for how to use iL!'
+  };
 
   List<String> categories = [];
+  List<String> recentTags = [];
 
   Database getdb() => this._db;
   void debugSetDb(Database db) => this._db = db;
@@ -103,34 +119,44 @@ class Filerw {
 
     debugPrint('$_filerwLogPrefix Database path: ${this._path}');
 
-    this._db = await openDatabase(this._path, version: 3, onCreate: (Database db, int v) async {
+    this._db = await openDatabase(this._path, version: 4, onCreate: (Database db, int v) async {
       debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
       await db.transaction((txn) async {
         await txn.execute(
             'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT NOT NULL )');
         await txn.execute(
             'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT UNIQUE NOT NULL)');
-        await txn.insert(todolistTableName, {
-          'id': '00000000000000000000000000',
-          'title': 'Hey, there!',
-          'category': 'todo',
-          'state': 'active',
-        });
+        await txn.execute(
+            'CREATE TABLE $tagsTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, tag TEXT UNIQUE NOT NULL)');
+        await txn.execute(
+            'CREATE TABLE $todoTagsJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, tagId INTEGER NOT NULL )');
+        await txn.execute(
+            'CREATE TABLE $todoCategoryJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, categoryId INTEGER NOT NULL )');
+        await txn.insert(todolistTableName, firstRawTodo);
         await txn.insert(categoryTableName, {'category': 'todo'});
       });
     }, onUpgrade: (Database db, int oldv, int newv) async {
-      if (oldv == 1 && newv == 2) {
-        await db.execute('ALTER TABLE $todolistTableName ADD COLUMN category TEXT');
-        await db.update(todolistTableName, {'category': 'todo'}, where: 'category IS NULL');
-        oldv = 2;
-      }
-      if (oldv == 2 && newv == 3) {
-        // TODO: ADD NEW table to manage categories!
-        await db.execute(
-            'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, category TEXT )');
+      // BREAKING UPDATE FOR VERSIONS BEFORE 4
+
+      if (oldv == 3) {
+        await _db.execute(
+            'CREATE TABLE $tagsTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, tag TEXT UNIQUE NOT NULL)');
         await db.rawInsert(
-            'INSERT INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
-        oldv = 3;
+            'INSERT INTO $tagsTableName ("intro") SELECT DISTINCT ("category") FROM $todolistTableName');
+        oldv = 4;
+        newv = 5;
+      }
+      if (oldv == 4 && newv == 5) {
+        await db.execute(
+            'CREATE TABLE $todoTagsJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, tagId INTEGER NOT NULL )');
+        await db.execute(
+            'CREATE TABLE $todoCategoryJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, categoryId INTEGER NOT NULL )');
+        await db.rawInsert('''
+          INSERT INTO $todoCategoryJoinTableName COLUMNS ( todoId, categoryId )
+          SELECT $todolistTableName.id, $categoryTableName.id 
+          FROM $todolistTableName 
+          INNER JOIN $categoryTableName 
+          ON $todolistTableName.category == $categoryTableName.category ''');
       }
 
       this.categories = await getCategories();
@@ -142,9 +168,10 @@ class Filerw {
     this._initialized = true;
   }
 
-  /// Get Todos within 3 monts OR is active
-  ///
+  /// Get Todos within 3 months OR is active.
   /// Returns Map< category: String, List< Todo > >
+  ///
+  /// * WILL CHANGE INTO RECENT TODOS WITHIN 3 MONTHS.
   Future<Map<String, List<Todo>>> getRecentTodos() async {
     // Check initialization status
     if (!this._initialized) this._askForInitialization();
@@ -171,21 +198,20 @@ class Filerw {
     return todos;
   }
 
+  /// DANGEROUS! Wipes out the whole database.
+  @deprecated
   Future<bool> wipeDatabase() async {
     debugPrint('$_filerwLogPrefix WIPING OUT THE ENTIRE DATABASE!');
     await _db.delete(todolistTableName);
     await _db.delete(categoryTableName);
-    await _db.insert(todolistTableName, {
-      'id': '00000000000000000000000000',
-      'title': 'Hey, there!',
-      'category': 'todo',
-      'state': 'active',
-    });
+    await _db.insert(todolistTableName, firstRawTodo);
     await _db.insert(categoryTableName, {'category': 'todo'});
     debugPrint('$_filerwLogPrefix SUCCESSFULLY DELETED ALL ENTRIES.');
     return true;
   }
 
+  /// Count the amount of Todos with the specific [state], in specific [category],
+  /// before [beforeTime] and after [afterTime].
   Future<int> countTodos(
       {String state, String category, DateTime beforeTime, DateTime afterTime}) async {
     int num = 0;
@@ -218,6 +244,40 @@ class Filerw {
     num = Sqflite.firstIntValue(await this._db.rawQuery(query));
     num ??= 0;
     return num;
+  }
+
+  /// Count the amount of Todos with the specific [state], in specific [category],
+  /// before [beforeTime] and after [afterTime].
+  Future<List<Todo>> findTodos(
+      {int limit, String state, String category, DateTime beforeTime, DateTime afterTime}) async {
+    String query = 'SELECT id, title, state, ddl, tags, category FROM $todolistTableName';
+    // List<String>
+
+    if (state != null || category != null || beforeTime != null || afterTime != null)
+      query += "WHERE";
+    // With specific state
+    if (state != null) query += 'state == "$state"';
+    // And specific category
+    if (category != null) query += 'AND category == "$category"';
+    // and before some time (TIME NOT INCLUDED)
+    if (beforeTime != null) {
+      String beforeId = new Ulid(millis: beforeTime.microsecondsSinceEpoch)
+          .toCanonical()
+          .replaceRange(11, 26, '0' * 16);
+      query += 'AND id > $beforeId';
+    }
+    // and after some time (TIME INCLUDED)
+    if (beforeTime != null) {
+      String afterId = new Ulid(millis: afterTime.microsecondsSinceEpoch)
+          .toCanonical()
+          .replaceRange(11, 26, '0' * 16);
+      query += 'AND id < $afterId';
+    }
+
+    // execute!
+    var todos =
+        (await this._db.rawQuery(query)).map((rawTodo) => Todo(rawTodo: rawTodo, isNewTodo: false));
+    return todos;
   }
 
   void _addTodo(Todo todo, Batch bat) {
@@ -258,12 +318,22 @@ class Filerw {
   Future<Todo> getTodoById(String id) async {
     Todo todo;
     todo = Todo(rawTodo: (await this._db.query(todolistTableName, where: 'id == "$id"'))[0]);
+
+    var rawTags = await _db.rawQuery('''
+      SELECT $tagsTableName.tag FROM $todoTagsJoinTableName
+      WHERE $todoTagsJoinTableName.id == $id
+      JOIN $tagsTableName ON $tagsTableName.id = $todoTagsJoinTableName.tagId
+    ''');
+
+    List<String> tags = rawTags.map((rawTag) => rawTag['tag']);
+    todo.tags = tags;
     return todo;
   }
 
   void _removeTodo(String id, Batch bat) {
     debugPrint('$_filerwLogPrefix Adding removal of $id to batch');
     bat.delete(todolistTableName, where: 'id == ?', whereArgs: [id]);
+    bat.delete(todoTagsJoinTableName, where: 'id == ?', whereArgs: [id]);
   }
 
   Future<void> removeTodo({String id, List<String> ids}) {
@@ -290,12 +360,19 @@ class Filerw {
   Future<void> flashCategories() async {
     await _db.rawInsert(
         'INSERT OR REPLACE INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
+    await _db.rawInsert('''
+          INSERT INTO $todoCategoryJoinTableName COLUMNS ( todoId, categoryId )
+          SELECT $todolistTableName.id, $categoryTableName.id 
+          FROM $todolistTableName 
+          INNER JOIN $categoryTableName 
+          ON $todolistTableName.category == $categoryTableName.category ''');
   }
 
-  Future<void> flashCategoriesWithBatch(Batch bat) async {
-    bat.rawInsert(
-        'INSERT OR REPLACE INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
-  }
+// Nobody uses this method.
+  // Future<void> flashCategoriesWithBatch(Batch bat) async {
+  //   bat.rawInsert(
+  //       'INSERT OR REPLACE INTO $categoryTableName ("category") SELECT DISTINCT ("category") FROM $todolistTableName');
+  // }
 
   Future<List<String>> getCategories() async {
     // await flashCategories();

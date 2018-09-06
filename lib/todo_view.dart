@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:ulid/ulid.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:ulid/ulid.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'style.dart';
 import 'filerw.dart';
 
@@ -44,13 +46,15 @@ class _IssualTodoViewState extends State<IssualTodoView> {
   final emptyTodoDescription = 'This todo has no description.';
 
   void postEdit() {
-    Navigator.push(
-      context,
-      IssualTransitions.verticlaPageTransition(
-        (BuildContext context, ani1, ani2) =>
-            new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
-      ),
-    ).then((_) => this.init(id));
+    Navigator
+        .push(
+          context,
+          IssualTransitions.verticlaPageTransition(
+            (BuildContext context, ani1, ani2) =>
+                new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
+          ),
+        )
+        .then((_) => this.init(id));
   }
 
   @override
@@ -59,6 +63,7 @@ class _IssualTodoViewState extends State<IssualTodoView> {
     return new Scaffold(
         body: new CustomScrollView(
       slivers: <Widget>[
+        // Appbar
         new SliverAppBar(
           actions: <Widget>[
             new IconButton(
@@ -76,6 +81,8 @@ class _IssualTodoViewState extends State<IssualTodoView> {
             )
           ],
         ),
+
+        // Title
         new SliverToBoxAdapter(
           child: new Container(
             child: Hero(
@@ -85,6 +92,8 @@ class _IssualTodoViewState extends State<IssualTodoView> {
             padding: EdgeInsets.all(16.0),
           ),
         ),
+
+        // Status, creation time and ID
         new SliverToBoxAdapter(
           child: new Container(
             padding: EdgeInsets.all(8.0),
@@ -106,18 +115,12 @@ class _IssualTodoViewState extends State<IssualTodoView> {
                           color: IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
                         ),
                   ),
-                  //  new Row(children: [
-                  //   new Icon(
-                  //     IssualMisc.stateIcons[mainTodo.state],
-                  //     semanticLabel: 'open',
-                  //   ),
-                  // ]),
                 ),
                 new Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     new Text(
-                      IssualMisc.getReadableTimeRepresentation(creationTime),
+                      'Created ' + IssualMisc.getReadableTimeRepresentation(creationTime, true),
                       style: Theme.of(context).textTheme.caption,
                     ),
                     new Text(
@@ -130,11 +133,33 @@ class _IssualTodoViewState extends State<IssualTodoView> {
             ),
           ),
         ),
+
+        // Tags
+        new SliverToBoxAdapter(
+          child: new Container(
+              padding: EdgeInsets.all(16.0),
+              child: new Wrap(
+                children: List.generate(mainTodo.tags.length + 1, (index) {
+                  if (index == 0)
+                    return Chip(
+                      label: Text('Add'),
+                    );
+                  else
+                    return Chip(label: Text(mainTodo.tags[index - 1]));
+                }),
+              )),
+        ),
+
+        // Description
         new SliverToBoxAdapter(
           child: new Container(
             padding: EdgeInsets.all(16.0),
-            child: new Text(
-                this.loaded ? mainTodo.desc ?? emptyTodoDescription : emptyTodoDescription),
+            child: new MarkdownBody(
+              data: this.loaded ? mainTodo.desc ?? emptyTodoDescription : emptyTodoDescription,
+              onTapLink: (linkText) {
+                canLaunch(linkText).then((result) => launch(linkText));
+              },
+            ),
           ),
         ),
       ],

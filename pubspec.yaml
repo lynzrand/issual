@@ -7,7 +7,7 @@ description: A new Flutter project.
 # Both the version and the builder number may be overridden in flutter
 # build by specifying --build-name and --build-number, respectively.
 # Read more about versioning at semver.org.
-version: 1.0.0+2
+version: 0.3.0+9
 
 environment:
   sdk: '>=2.0.0-dev.68.0 <3.0.0'
@@ -21,7 +21,8 @@ dependencies:
   cupertino_icons: ^0.1.2
   sqflite: any
   ulid: any
-  material_search: any
+  flutter_markdown: any
+  url_launcher: any
 
 dev_dependencies:
   flutter_test:
