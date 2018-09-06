@@ -99,7 +99,13 @@ class _IssualTodoViewState extends State<IssualTodoView> {
               child: new Container(
                 child: Hero(
                   tag: widget.id + 'title',
-                  child: Text(this.title, style: Theme.of(context).textTheme.headline),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      this.title,
+                      style: Theme.of(context).textTheme.headline,
+                    ),
+                  ),
                 ),
                 padding: EdgeInsets.all(16.0),
               ),
@@ -209,9 +215,12 @@ class IssualTodoEditorView extends StatefulWidget {
 
 class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
   _IssualTodoEditorViewState(this.rawTodo, this.rw) {
-    this.rawTodo ??= {'state': 'open', 'category': 'todo'};
+    this.rawTodo['state'] ??= 'open';
+    this.rawTodo['category'] ??= TodoCategory(name: 'Todo', color: 'blue');
+
     titleController = new TextEditingController(text: rawTodo['title'] as String);
-    categoryController = new TextEditingController(text: rawTodo['category'] as String);
+    categoryController =
+        new TextEditingController(text: (rawTodo['category'] as TodoCategory).name);
     if (this.rawTodo['id'] != null)
       rw.getTodoById(this.rawTodo['id']).then((data) {
         setState(() {
@@ -267,12 +276,16 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
             ],
             pinned: true,
           ),
+
+          // Title
           new SliverToBoxAdapter(
             child: new Padding(
-              padding: new EdgeInsets.all(16.0),
-              child: Column(
-                children: <Widget>[
-                  new TextField(
+              padding: new EdgeInsets.symmetric(horizontal: 16.0),
+              child: Hero(
+                tag: (widget.rawTodo != null ? widget.rawTodo['id'] : 'empty') + 'title',
+                child: new Material(
+                  color: Colors.transparent,
+                  child: TextField(
                     key: new Key('titleField'),
                     controller: titleController,
                     autofocus: true,
@@ -281,33 +294,72 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
                     style: Theme.of(context).textTheme.headline,
                     onChanged: (String str) => rawTodo['title'] = str,
                   ),
-                  // TODO: replace this with a horizontal scroller with categoty chips
-                  //        so that one cannot leave it blank
+                ),
+              ),
+            ),
+          ),
 
+          // TODO: replace this with a horizontal scroller with categoty chips
+          //        so that one cannot leave it blank
+          new SliverToBoxAdapter(
+            child: new Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child:
                   // TODO: ADD tag selector
                   new TextField(
-                    key: new Key('categoryField'),
-                    controller: categoryController,
-                    decoration: InputDecoration(
-                      hintText: 'Category',
-                      isDense: false,
-                      border: InputBorder.none,
-                      prefixText: 'iL/',
-                    ),
-                    onChanged: (String str) => rawTodo['category'] = str,
+                key: new Key('categoryField'),
+                controller: categoryController,
+                decoration: InputDecoration(
+                  hintText: 'Category',
+                  isDense: false,
+                  border: InputBorder.none,
+                  prefixText: 'iL/',
+                ),
+                onChanged: (String str) => rawTodo['category'] = str,
+              ),
+            ),
+          ),
+
+          // Tags
+          new SliverToBoxAdapter(
+            child: new Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: new Wrap(
+                  spacing: 8.0,
+                  children: List.generate(
+                    // TODO: getTopTags()!
+                    5,
+                    (index) {
+                      if (index == 0)
+                        return ActionChip(
+                          label: Text('Add'),
+                          avatar: Icon(
+                            Icons.add,
+                            size: 16.0,
+                          ),
+                          onPressed: () => {},
+                        );
+                      else
+                        return FilterChip(
+                          label: Text(index.toString()),
+                          onSelected: (selected) =>
+                              debugPrint('$index has been ${selected ? '' : 'un'}selected'),
+                        );
+                    },
                   ),
-                  new Container(
-                    constraints: new BoxConstraints(minHeight: 240.0),
-                    child: new TextField(
-                      key: new Key('descField'),
-                      controller: descController,
-                      decoration:
-                          InputDecoration(hintText: 'Description', border: InputBorder.none),
-                      maxLines: null,
-                      onChanged: (String str) => rawTodo['desc'] = str,
-                    ),
-                  ),
-                ],
+                )),
+          ),
+
+          new SliverToBoxAdapter(
+            child: new Container(
+              constraints: new BoxConstraints(minHeight: 240.0),
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: new TextField(
+                key: new Key('descField'),
+                controller: descController,
+                decoration: InputDecoration(hintText: 'Description', border: InputBorder.none),
+                maxLines: null,
+                onChanged: (String str) => rawTodo['desc'] = str,
               ),
             ),
           ),

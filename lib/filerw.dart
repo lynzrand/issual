@@ -26,7 +26,7 @@ class Todo {
   DateTime ddl;
 
   /// Group / Category
-  String category;
+  TodoCategory category;
 
   /// Tags
   List<String> tags;
@@ -43,7 +43,7 @@ class Todo {
     this.state = rawTodo['state'];
     this.desc = rawTodo['desc'] == "" ? null : rawTodo['desc'];
     // this.tags = rawTodo['tags'] == null ? null : (rawTodo['tags'] as String).split('+');
-    this.category = rawTodo['category'];
+    // this.category = rawTodo['category'];
 
     // Dude, you can rest now.
     // debugPrint('[Todo] Creating new Todo $id out of ${rawTodo.toString()}');
@@ -61,7 +61,7 @@ class Todo {
     // if(this.desc == "") map['desc'] = null;
     map['ddl'] = this.ddl;
     // map['tags'] = this.tags == null ? null : this.tags.join('+');
-    map['category'] = this.category;
+    // map['category'] = this.category;
     map['state'] = this.state;
     // debugPrint('ToMap called on Todo $id');
     return map;
@@ -152,7 +152,7 @@ class Filerw {
         await txn.execute(
             'CREATE TABLE $todoCategoryJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, categoryId INTEGER NOT NULL )');
         await txn.insert(todolistTableName, firstRawTodo);
-        await txn.insert(categoryTableName, {'name': 'todo', 'color': 'orange'});
+        await txn.insert(categoryTableName, {'id':0,'name': 'todo', 'color': 'orange'});
         await txn.insert(tagsTableName, {'id': 0, 'tag': 'intro'});
         await txn.insert(todoCategoryJoinTableName,
             {'id': 0, 'todoId': '00000000000000000000000000', 'categoryId': 0});
@@ -354,15 +354,25 @@ class Filerw {
       JOIN $todoTagsJoinTableName
       ON $tagsTableName.id == $todoTagsJoinTableName.tagId
       WHERE $todoTagsJoinTableName.todoId == "$id"
-    ''');
+    ''').catchError((e) => debugPrint(e));
+    var rawCategory = await _db.rawQuery('''
+      SELECT 
+        $categoryTableName.name as name,
+        $categoryTableName.color as color
+      FROM $categoryTableName
+      JOIN $todoCategoryJoinTableName
+      ON $categoryTableName.id == $todoCategoryJoinTableName.categoryId
+      WHERE $todoCategoryJoinTableName.todoId == "$id"
+    ''').catchError((e) => debugPrint(e));
     // WHERE $todoTagsJoinTableName.id == "$id"
-    debugPrint(rawTags.toString());
-
+    debugPrint(rawCategory.toString());
     List<String> tags = [];
     for (var rawTag in rawTags) {
       tags.add(rawTag['tag']);
     }
+
     todo.tags = tags;
+    todo.category = TodoCategory(raw: rawCategory[0]);
     return todo;
   }
 
