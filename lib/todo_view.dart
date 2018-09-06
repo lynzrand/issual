@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'style.dart';
 import 'filerw.dart';
+import 'notifications.dart';
 
 class IssualTodoView extends StatefulWidget {
   IssualTodoView(this.id, this.title, this._rw);
@@ -29,9 +30,14 @@ class _IssualTodoViewState extends State<IssualTodoView> {
   }
   Future<void> init(String id) async {
     debugPrint('Initializing with Todo $id');
-    var mainTodo = await _rw.getTodoById(id);
+    var mainTodo;
+    try {
+      mainTodo = await _rw.getTodoById(id);
+    } catch (e) {
+      debugPrint(e);
+    }
     setState(() {
-      this.mainTodo = mainTodo;
+      if (mainTodo != null) this.mainTodo = mainTodo;
       this.loaded = true;
     });
   }
@@ -46,124 +52,145 @@ class _IssualTodoViewState extends State<IssualTodoView> {
   final emptyTodoDescription = 'This todo has no description.';
 
   void postEdit() {
-    Navigator
-        .push(
-          context,
-          IssualTransitions.verticlaPageTransition(
-            (BuildContext context, ani1, ani2) =>
-                new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
-          ),
-        )
-        .then((_) => this.init(id));
+    Navigator.push(
+      context,
+      IssualTransitions.verticlaPageTransition(
+        (BuildContext context, ani1, ani2) =>
+            new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
+      ),
+    ).then((_) => this.init(id));
+  }
+
+  bool notificationHandler(Notification t) {
+    if (t is TodoTagNotification) {}
+    return false;
   }
 
   @override
   Widget build(BuildContext context) {
     // TODO: Use sliver stuff
     return new Scaffold(
-        body: new CustomScrollView(
-      slivers: <Widget>[
-        // Appbar
-        new SliverAppBar(
-          actions: <Widget>[
-            new IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: postEdit,
-            ),
-            new PopupMenuButton(
-              icon: Icon(Icons.more_vert),
-              itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: '',
-                      child: Text('Placeholder'),
-                    )
-                  ],
-            )
-          ],
-        ),
-
-        // Title
-        new SliverToBoxAdapter(
-          child: new Container(
-            child: Hero(
-              tag: widget.id + 'title',
-              child: Text(this.title, style: Theme.of(context).textTheme.headline),
-            ),
-            padding: EdgeInsets.all(16.0),
-          ),
-        ),
-
-        // Status, creation time and ID
-        new SliverToBoxAdapter(
-          child: new Container(
-            padding: EdgeInsets.all(8.0),
-            child: new Row(
-              children: [
-                new Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
-                      width: 2.0,
-                    ),
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  padding: EdgeInsets.all(8.0),
-                  margin: EdgeInsets.symmetric(horizontal: 8.0),
-                  child: new Text(
-                    mainTodo.state.toUpperCase(),
-                    style: Theme.of(context).textTheme.body2.apply(
-                          color: IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
-                        ),
-                  ),
+      body: new NotificationListener(
+        onNotification: notificationHandler,
+        child: new CustomScrollView(
+          slivers: <Widget>[
+            // Appbar
+            new SliverAppBar(
+              pinned: true,
+              actions: <Widget>[
+                new IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: postEdit,
                 ),
-                new Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    new Text(
-                      'Created ' + IssualMisc.getReadableTimeRepresentation(creationTime, true),
-                      style: Theme.of(context).textTheme.caption,
-                    ),
-                    new Text(
-                      mainTodo.id,
-                      style: Theme.of(context).textTheme.caption,
-                    ),
-                  ],
-                ),
+                new PopupMenuButton(
+                  icon: Icon(Icons.more_vert),
+                  itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: '',
+                          child: Text('Placeholder'),
+                        )
+                      ],
+                )
               ],
             ),
-          ),
-        ),
 
-        // Tags
-        new SliverToBoxAdapter(
-          child: new Container(
-              padding: EdgeInsets.all(16.0),
-              child: new Wrap(
-                children: List.generate(mainTodo.tags.length + 1, (index) {
-                  if (index == 0)
-                    return Chip(
-                      label: Text('Add'),
-                    );
-                  else
-                    return Chip(label: Text(mainTodo.tags[index - 1]));
-                }),
-              )),
-        ),
-
-        // Description
-        new SliverToBoxAdapter(
-          child: new Container(
-            padding: EdgeInsets.all(16.0),
-            child: new MarkdownBody(
-              data: this.loaded ? mainTodo.desc ?? emptyTodoDescription : emptyTodoDescription,
-              onTapLink: (linkText) {
-                canLaunch(linkText).then((result) => launch(linkText));
-              },
+            // Title
+            new SliverToBoxAdapter(
+              child: new Container(
+                child: Hero(
+                  tag: widget.id + 'title',
+                  child: Text(this.title, style: Theme.of(context).textTheme.headline),
+                ),
+                padding: EdgeInsets.all(16.0),
+              ),
             ),
-          ),
+
+            // Status, creation time and ID
+            new SliverToBoxAdapter(
+              child: new Container(
+                padding: EdgeInsets.all(8.0),
+                child: new Row(
+                  children: [
+                    new Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
+                          width: 2.0,
+                        ),
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      padding: EdgeInsets.all(8.0),
+                      margin: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: new Text(
+                        mainTodo.state.toUpperCase(),
+                        style: Theme.of(context).textTheme.body2.apply(
+                              color:
+                                  IssualMisc.getColorForStateDesaturated(context, mainTodo.state),
+                            ),
+                      ),
+                    ),
+                    new Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        new Text(
+                          'Created ' + IssualMisc.getReadableTimeRepresentation(creationTime, true),
+                          style: Theme.of(context).textTheme.caption,
+                        ),
+                        new Text(
+                          mainTodo.id,
+                          style: Theme.of(context).textTheme.caption,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Tags
+            new SliverToBoxAdapter(
+              child: new Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: new Wrap(
+                    spacing: 8.0,
+                    children: List.generate(
+                      (mainTodo.tags != null ? mainTodo.tags.length : 0) + 1,
+                      (index) {
+                        if (index == 0)
+                          return ActionChip(
+                            label: Text('Add'),
+                            avatar: Icon(
+                              Icons.add,
+                              size: 16.0,
+                            ),
+                            onPressed: () => {},
+                          );
+                        else
+                          return ActionChip(
+                            label: Text(mainTodo.tags[index - 1]),
+                            onPressed: () => {},
+                          );
+                      },
+                    ),
+                  )),
+            ),
+
+            // Description
+            new SliverToBoxAdapter(
+              child: new Container(
+                padding: EdgeInsets.all(16.0),
+                child: new MarkdownBody(
+                  data: this.loaded ? mainTodo.desc ?? emptyTodoDescription : emptyTodoDescription,
+                  onTapLink: (linkText) {
+                    canLaunch(linkText).then((result) => launch(linkText));
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ));
+      ),
+    );
   }
 }
 
@@ -213,7 +240,7 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
 
     Navigator.pop(
       context,
-      {'save': true, 'data': rawTodo, 'isNew': widget.isNew},
+      {'save': true},
     );
   }
 

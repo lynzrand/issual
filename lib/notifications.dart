@@ -41,3 +41,11 @@ class TodoCategoryChangeNotification extends Notification {
     return 'TodoStateChangeNotification( type: $type, data: $data )';
   }
 }
+
+enum TodoTagNotificationState { add, remove, view }
+
+class TodoTagNotification {
+  TodoTagNotification(this.state, this.data);
+  final TodoTagNotificationState state;
+  final dynamic data;
+}
