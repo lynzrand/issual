@@ -252,6 +252,7 @@ class Filerw {
 
     debugPrint('$_filerwLogPrefix commiting batch');
     await bat.commit(noResult: true);
+    await flashCategories();
   }
 
   Future<Todo> getTodoById(String id) async {

@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:ulid/ulid.dart';
+import 'style.dart';
 import 'dart:async';
 import 'dart:math';
 import 'filerw.dart';
 
 class IssualTodoView extends StatefulWidget {
-  IssualTodoView(this.id, this.title, this._db);
+  IssualTodoView(this.id, this.title, this._rw);
   final String id;
   final String title;
-  final Filerw _db;
+  final Filerw _rw;
 
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return new _IssualTodoViewState(id, _db, title);
+    return new _IssualTodoViewState(id, _rw, title);
   }
 }
 
 class _IssualTodoViewState extends State<IssualTodoView> {
-  _IssualTodoViewState(this.id, this._db, this.title) {
+  _IssualTodoViewState(this.id, this._rw, this.title) {
     this.init(id);
     this.creationTime = new DateTime.fromMillisecondsSinceEpoch(Ulid.parse(this.id).toMillis());
   }
   Future<void> init(String id) async {
     debugPrint('Initializing with Todo $id');
-    var mainTodo = await _db.getTodoById(id);
+    var mainTodo = await _rw.getTodoById(id);
     setState(() {
       this.mainTodo = mainTodo;
       this.loaded = true;
@@ -32,7 +33,7 @@ class _IssualTodoViewState extends State<IssualTodoView> {
   }
 
   String id;
-  Filerw _db;
+  Filerw _rw;
   bool loaded = false;
   String title;
   Todo mainTodo;
@@ -54,6 +55,15 @@ class _IssualTodoViewState extends State<IssualTodoView> {
     }
   }
 
+  void postEdit() {
+    Navigator.push(
+      context,
+      IssualTransitions.verticlaPageTransition(
+        (BuildContext context, ani1, ani2) => new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
+      ),
+    ).then((_) => this.init(id));
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: Use sliver stuff
@@ -64,7 +74,7 @@ class _IssualTodoViewState extends State<IssualTodoView> {
           actions: <Widget>[
             new IconButton(
               icon: Icon(Icons.edit),
-              onPressed: ,
+              onPressed: postEdit,
             ),
             new PopupMenuButton(
               icon: Icon(Icons.more_vert),
@@ -141,6 +151,26 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
   TextEditingController categoryController;
   TextEditingController descController;
 
+  void exitWithSaving() async {
+    Todo todo = new Todo(
+      rawTodo: rawTodo,
+      isNewTodo: widget.isNew,
+    );
+    if (widget.isNew)
+      await rw.postTodo(todo: todo);
+    else
+      await rw.updateTodo(todo.id, todo);
+
+    Navigator.pop(
+      context,
+      {'save': true, 'data': rawTodo, 'isNew': widget.isNew},
+    );
+  }
+
+  void exitWithoutSaving() {
+    Navigator.pop(context, {'save': false});
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -149,18 +179,13 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
           new SliverAppBar(
             leading: new IconButton(
               icon: new Icon(Icons.close),
-              onPressed: () {
-                if (categoryController.text != "") Navigator.pop(context, {'save': false});
-              },
+              onPressed: exitWithoutSaving,
             ),
             actions: <Widget>[
               new IconButton(
                 icon: new Icon(Icons.check),
                 //  onPressed: () => debugPrint(rawTodo.toString()),
-                onPressed: () => Navigator.pop(
-                      context,
-                      {'save': true, 'data': rawTodo, 'isNew': widget.isNew},
-                    ),
+                onPressed: exitWithSaving,
               ),
             ],
             pinned: true,

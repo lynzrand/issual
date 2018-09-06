@@ -181,26 +181,10 @@ class _MyHomePageState extends State<MyHomePage> {
           (BuildContext context, ani1, ani2) => new IssualTodoEditorView(t.newTodo, t.rawTodo, _rw),
         ),
       ).then((dynamic data) async {
-        // TODO: URGENT Put this part into TodoEditorView, before submitting!!!
-        var structuredData = data as Map<String, dynamic>;
-        structuredData ??= {};
-        if (structuredData['save'] == false || structuredData['save'] == null) return;
-
-        Todo todo = new Todo(
-          rawTodo: structuredData['data'],
-          isNewTodo: structuredData['isNew'] as bool,
-        );
-        if (structuredData['isNew'] as bool)
-          await _rw.postTodo(todo: todo);
-        else
-          await _rw.updateTodo(structuredData['data']['id'], todo);
-
-        if (categories.indexOf(todo.category) < 0) await _rw.addCategory(todo.category);
-
         await this.init(null);
       }).catchError((e) => debugPrint(e));
       return true;
-    }
+    } else if (t is TodoCategoryChangeNotification) {}
   }
 
   Widget _buildTodoCard(BuildContext ctx, int index) {
@@ -271,14 +255,14 @@ class _IssualAppBarState extends State<IssualAppBar> {
     return new SliverAppBar(
       pinned: true,
       expandedHeight: 360.0,
+      title: new Text(
+        'iL/all_todos',
+      ),
       flexibleSpace: new FlexibleSpaceBar(
         background: Container(
           // TODO: show real data!
           alignment: Alignment.center,
-        ),
-        title: new Text(
-          'iL/all_todos',
-          style: TextStyle(fontWeight: FontWeight.w400),
+          child: Text('=v='),
         ),
       ),
       actions: <Widget>[
