@@ -154,32 +154,32 @@ class _IssualTodoViewState extends State<IssualTodoView> {
             ),
 
             // Tags
-            new SliverToBoxAdapter(
-              child: new Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: new Wrap(
-                    spacing: 8.0,
-                    children: List.generate(
-                      (mainTodo.tags != null ? mainTodo.tags.length : 0) + 1,
-                      (index) {
-                        if (index == 0)
-                          return ActionChip(
-                            label: Text('Add'),
-                            avatar: Icon(
-                              Icons.add,
-                              size: 16.0,
-                            ),
-                            onPressed: () => {},
-                          );
-                        else
-                          return ActionChip(
-                            label: Text(mainTodo.tags[index - 1]),
-                            onPressed: () => {},
-                          );
-                      },
-                    ),
-                  )),
-            ),
+            // new SliverToBoxAdapter(
+            //   child: new Container(
+            //       padding: EdgeInsets.symmetric(horizontal: 16.0),
+            //       child: new Wrap(
+            //         spacing: 8.0,
+            //         children: List.generate(
+            //           (mainTodo.tags != null ? mainTodo.tags.length : 0) + 1,
+            //           (index) {
+            //             if (index == 0)
+            //               return ActionChip(
+            //                 label: Text('Add'),
+            //                 avatar: Icon(
+            //                   Icons.add,
+            //                   size: 16.0,
+            //                 ),
+            //                 onPressed: () => {},
+            //               );
+            //             else
+            //               return ActionChip(
+            //                 label: Text(mainTodo.tags[index - 1]),
+            //                 onPressed: () => {},
+            //               );
+            //           },
+            //         ),
+            //       )),
+            // ),
 
             // Description
             new SliverToBoxAdapter(

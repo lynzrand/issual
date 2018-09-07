@@ -264,18 +264,19 @@ class _IssualAppBarState extends State<IssualAppBar> {
         ),
       ),
       actions: <Widget>[
-        new IconButton(
-          icon: Icon(Icons.brightness_3),
-          onPressed: () {
-            DebugSwitchNightModeNotificaton().dispatch(context);
-          },
-        ),
-        new IconButton(
-          icon: Icon(Icons.search),
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => IssualSearchScreen()));
-          },
-        )
+        // TODO: add settings
+        // new IconButton(
+        //   icon: Icon(Icons.brightness_3),
+        //   onPressed: () {
+        //     DebugSwitchNightModeNotificaton().dispatch(context);
+        //   },
+        // ),
+        // new IconButton(
+        //   icon: Icon(Icons.search),
+        //   onPressed: () {
+        //     Navigator.push(context, MaterialPageRoute(builder: (context) => IssualSearchScreen()));
+        //   },
+        // )
       ],
     );
   }

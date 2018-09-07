@@ -2,8 +2,6 @@
 
 # iL
 
-**Current version: 0.3.1 Megumin**
-
 iL (codename "Issual") is purely a Todo manager with some handy features. Its
 name "iL" does not hold any special meanings.
 
@@ -19,6 +17,12 @@ If _someone_ would like to test and release an iOS version of it, PLZ DO THAT!
 - Categorizing todo items
 - Adding multiple state to items. Currently avaliable ones are: Open, Closed,
   Active, Pending, Canceled. User addition Soon™.
+
+## Download
+
+[Release Page](https://github.com/01010101lzy/issual/releases).
+
+**Current version: Beta 0.3.2 "Saika"**
 
 ## Known Issues
 
@@ -38,6 +42,8 @@ If _someone_ would like to test and release an iOS version of it, PLZ DO THAT!
 
 - ADD category support for todos
 
+### Older versions are not logged
+
 ## Comparation with other todolists
 
 ## License
@@ -46,16 +52,17 @@ MIT © 2018 Rynco Li.
 
 ## Usage
 
-To build, add your own key and run
-
 ```sh
+# To build, add your own key and run
 $ flutter build apk
-```
 
-To test, run
-
-```sh
+# To test, run
 $ flutter run
+
+# To test release version, run
+$ flutter run --release
 ```
 
-## For more documentation please view the [/docs](docs/readme.md)
+For more documentation about this freamwork see [Flutter's website](https://flutter.io).
+
+More documentation on this project at [/docs/readme.md]().

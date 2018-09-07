@@ -100,6 +100,13 @@
             </list>
           </value>
         </entry>
+        <entry key="flutter_slidable">
+          <value>
+            <list>
+              <option value="D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_slidable-0.4.5/lib" />
+            </list>
+          </value>
+        </entry>
         <entry key="flutter_test">
           <value>
             <list>
@@ -465,6 +472,7 @@
       <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/cupertino_icons-0.1.2/lib" />
       <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/file-5.0.4/lib" />
       <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_markdown-0.2.0/lib" />
+      <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_slidable-0.4.5/lib" />
       <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/front_end-0.1.4/lib" />
       <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/glob-1.1.7/lib" />
       <root url="file://D:/Programs/flutter/.pub-cache/hosted/pub.dartlang.org/html-0.13.3+3/lib" />

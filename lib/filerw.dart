@@ -113,7 +113,7 @@ class Filerw {
     // 'tags': 'intro',
     'state': 'active',
     'desc':
-        'Hi, It seems this is the first time you use iL. Go check out the [docs](https://github.com/01010101lzy/issual/blob/master/docs/readme.md) for how to use iL!'
+        'Hi! If you\'re the first time using iL, please check out our [docs](https://github.com/01010101lzy/issual/blob/master/docs/readme.md) on how to use it.\n\n![](https://raw.githubusercontent.com/01010101lzy/issual/master/docs/res/iL_header.png)\n\nIf you like this app, please consider starring it on its [GitHub Repository](https://github.com/01010101lzy/issual)!'
   };
 
   List<String> recentTags = [];
@@ -332,11 +332,11 @@ class Filerw {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
 
-        // await txn.delete(
-        //   todoCategoryJoinTableName,
-        //   where: 'todoId == ?',
-        //   whereArgs: [todo.id],
-        // );
+        await txn.delete(
+          todoCategoryJoinTableName,
+          where: 'todoId == ?',
+          whereArgs: [todo.id],
+        );
         await txn.insert(
           todoCategoryJoinTableName,
           {'todoId': todo.id, 'categoryId': todo.category.id},
