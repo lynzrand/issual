@@ -31,7 +31,7 @@ class Todo {
   /// Tags
   List<String> tags;
 
-  Todo({Map<String, dynamic> rawTodo, bool isNewTodo = false}) {
+  Todo({Map<String, dynamic> rawTodo, bool isNewTodo = false, this.category}) {
     rawTodo ??= new Map<String, dynamic>();
 
     if (isNewTodo || rawTodo['id'] == null)
@@ -217,7 +217,7 @@ class Filerw {
     // orderBy: 'id DESC');
 
     List<Map<String, dynamic>> rawTodos = await _db.rawQuery('''
-      SELECT $todolistTableName.id, title, state, ddl, $categoryTableName.name as category
+      SELECT $todolistTableName.id, title, state, ddl, $categoryTableName.name as category, $categoryTableName.id as categoryId, $categoryTableName.color as categoryColor
       FROM $todolistTableName
       JOIN $todoCategoryJoinTableName ON $todolistTableName.id == $todoCategoryJoinTableName.todoId
       JOIN $categoryTableName ON $categoryTableName.id == $todoCategoryJoinTableName.categoryId
@@ -227,7 +227,13 @@ class Filerw {
     Map<String, List<Todo>> todos = {};
     for (Map<String, dynamic> todo in rawTodos) {
       if (todos[todo['category'].toString()] == null) todos[todo['category'].toString()] = [];
-      todos[todo['category'].toString()].add(new Todo(rawTodo: todo));
+      todos[todo['category'].toString()].add(
+        new Todo(
+          rawTodo: todo,
+          category: TodoCategory(
+              name: todo['category'], id: todo['categoryId'], color: todo['categoryColor']),
+        ),
+      );
     }
 
     // This is not the best way to do...
