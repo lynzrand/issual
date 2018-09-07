@@ -65,4 +65,4 @@ $ flutter run --release
 
 For more documentation about this freamwork see [Flutter's website](https://flutter.io).
 
-More documentation on this project at [/docs/readme.md]().
+More documentation on this project at [docs/readme.md]().
