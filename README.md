@@ -26,8 +26,7 @@ If _someone_ would like to test and release an iOS version of it, PLZ DO THAT!
 
 ## Known Issues
 
-- There is no visible delete button for single todos
-- Delete button for Categories do not work
+- There is no visible delete button in IssualTodoView
 - Todos cannot migrate from category to category
 - No actrual tag support is avaliable
 

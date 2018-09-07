@@ -101,10 +101,14 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           });
           break;
+        case TodoCategoryChangeType.remove:
+          _rw.removeCategory(t.data).then(this.init);
+          break;
         default:
           debugPrint('Method for ${t.type} not implemented yet.');
           break;
       }
+      return true;
     } else if (t is DebugSwitchNightModeNotificaton) {
       setState(() {
         isDarkTheme = !isDarkTheme;

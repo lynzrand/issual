@@ -47,9 +47,18 @@ class TodoCard extends StatelessWidget {
                   itemBuilder: (context) {
                     return [
                       PopupMenuItem(
+                        value: 'remove',
                         child: Text('Delete'),
                       ),
                     ];
+                  },
+                  onSelected: (t) {
+                    switch (t) {
+                      case 'remove':
+                        TodoCategoryChangeNotification(
+                                type: TodoCategoryChangeType.remove, data: category)
+                            .dispatch(context);
+                    }
                   },
                 ),
               ],

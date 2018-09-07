@@ -127,7 +127,7 @@ class Filerw {
 
   Future<void> init({bool deleteCurrentDatabase = false}) async {
     // Yeah I know this is deprecated but it is the only way dude =x=
-    // await Sqflite.devSetDebugModeOn(true);
+    await Sqflite.devSetDebugModeOn(true);
 
     debugPrint(
         '$_filerwLogPrefix FileRW initialization start. ${deleteCurrentDatabase ? "DELETING CURRENT DATABASE" : ""}');
@@ -388,7 +388,6 @@ class Filerw {
       if (todoMap != null) {
         for (String todoMapKey in todoMap.keys) this._addTodo(todoMap[todoMapKey], txn);
       }
-
       debugPrint('$_filerwLogPrefix commiting batch');
     }).catchError((e) => debugPrint(e));
     // await flashCategories();
@@ -515,5 +514,21 @@ class Filerw {
   Future<void> addCategory(TodoCategory cat) async {
     debugPrint(cat.toString());
     await _db.insert(categoryTableName, cat.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> removeCategory(TodoCategory cat) async {
+    await _db.transaction((txn) async {
+      await txn.rawDelete('''
+          DELETE FROM $todolistTableName 
+          WHERE id IN (
+            SELECT $todolistTableName.id FROM $todolistTableName
+            JOIN $todoCategoryJoinTableName
+            ON $todolistTableName.id == $todoCategoryJoinTableName.todoId
+            WHERE $todoCategoryJoinTableName.categoryId == "${cat.id}"
+          )
+        ''').catchError((e) => debugPrint(e));
+      await txn.delete(todoCategoryJoinTableName, where: 'categoryId == ?', whereArgs: [cat.id]);
+      await txn.delete(categoryTableName, where: 'id == ?', whereArgs: [cat.id]);
+    });
   }
 }
