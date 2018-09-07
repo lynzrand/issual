@@ -152,7 +152,7 @@ class Filerw {
         await txn.execute(
             'CREATE TABLE $todoCategoryJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, categoryId INTEGER NOT NULL )');
         await txn.insert(todolistTableName, firstRawTodo);
-        await txn.insert(categoryTableName, {'id':0,'name': 'todo', 'color': 'orange'});
+        await txn.insert(categoryTableName, {'id': 0, 'name': 'todo', 'color': 'orange'});
         await txn.insert(tagsTableName, {'id': 0, 'tag': 'intro'});
         await txn.insert(todoCategoryJoinTableName,
             {'id': 0, 'todoId': '00000000000000000000000000', 'categoryId': 0});
@@ -433,6 +433,7 @@ class Filerw {
   }
 
   Future<void> addCategory(TodoCategory cat) async {
+    debugPrint(cat.toString());
     await _db.insert(categoryTableName, cat.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }

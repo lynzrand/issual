@@ -59,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  bool foundEasterEgg = false;
+  // bool foundEasterEgg = false;
   Filerw _rw;
   bool _rwInitialized = false;
   Map<String, List<Todo>> displayedTodos = {};
@@ -79,14 +79,21 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (t is TodoCategoryChangeNotification) {
       switch (t.type) {
         case TodoCategoryChangeType.add:
-          showDialog<String>(
-              context: context,
-              builder: (context) {
-                return new IssualNewCategoryDialog();
-              }).then((result) {
-            // await _rw.addCategory(
-
-            // );
+          showDialog<TodoCategory>(
+            context: context,
+            builder: (context) {
+              return new IssualNewCategoryDialog();
+            },
+          ).then((result) async {
+            debugPrint('result');
+            if (result != null) {
+              try {
+                await _rw.addCategory(result);
+                await this.init(null);
+              } catch (e) {
+                debugPrint(e);
+              }
+            }
           });
           break;
         default:
@@ -294,8 +301,13 @@ class IssualNewCategoryDialog extends StatefulWidget {
 }
 
 class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
-  String text;
+  // String text;
+  String color = 'blue';
   var controller = new TextEditingController();
+
+  void validateAndPop() {
+    Navigator.pop(context, TodoCategory(name: controller.text, color: color));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +318,7 @@ class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             new Container(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
               child: new Text(
                 'Create new category',
                 style: Theme.of(context).textTheme.title,
@@ -317,8 +329,8 @@ class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
               child: TextFormField(
                 controller: controller,
                 decoration: InputDecoration(hintText: 'Category name'),
+                autovalidate: true,
                 validator: (text) => text == "" ? 'Category name must not be empty' : null,
-                onSaved: (str) => text = str,
               ),
             ),
             new Container(
@@ -328,34 +340,38 @@ class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
                 style: Theme.of(context).textTheme.subhead,
               ),
             ),
-            new Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: new GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 2.0,
-                  crossAxisSpacing: 2.0,
+            new NotificationListener(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: new GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    mainAxisSpacing: 2.0,
+                    crossAxisSpacing: 2.0,
+                  ),
+                  itemBuilder: (context, index) {
+                    return IssualNewCategoryColorSelector(
+                      index,
+                      IssualColors.coloredThemes.keys.elementAt(index) == color,
+                    );
+                  },
+                  shrinkWrap: true,
+                  itemCount: IssualColors.coloredThemes.keys.length,
                 ),
-                itemBuilder: (context, index) {
-                  var key = IssualColors.coloredThemes.keys.elementAt(index);
-                  return new GridTile(
-                    child: Container(
-                      child: Material(
-                        color: IssualColors.coloredThemes[key]['primarySwatch'] as MaterialColor,
-                      ),
-                    ),
-                  );
-                },
-                shrinkWrap: true,
-                itemCount: IssualColors.coloredThemes.keys.length,
+                constraints: BoxConstraints(maxHeight: 480.0),
               ),
-              constraints: BoxConstraints(maxHeight: 480.0),
+              onNotification: (t) {
+                if (t is CategoryColorSelectorNotification)
+                  setState(() {
+                    color = t.key;
+                  });
+              },
             ),
             new ButtonBar(
               children: <Widget>[
                 new FlatButton(
                   child: Text('OK'),
-                  onPressed: () => Navigator.pop(context, text),
+                  onPressed: validateAndPop,
                 ),
                 new FlatButton(
                   child: Text('Cancel'),
@@ -365,6 +381,49 @@ class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
             ),
           ],
           mainAxisSize: MainAxisSize.min,
+        ),
+      ),
+    );
+  }
+}
+
+class IssualNewCategoryColorSelector extends StatelessWidget {
+  IssualNewCategoryColorSelector(this.index, this.state) {}
+  final index;
+  final state;
+  String _key() {
+    return IssualColors.coloredThemes.keys.elementAt(index);
+  }
+
+  Widget getChildOnState() {
+    if (state) {
+      return IgnorePointer(
+        child: Container(
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.done,
+            color: Colors.white,
+          ),
+        ),
+      );
+    } else
+      return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new GridTile(
+      child: Container(
+        child: Material(
+          color: IssualColors.coloredThemes[_key()]['primarySwatch'] as MaterialColor,
+          child: InkWell(
+            onTap: () => CategoryColorSelectorNotification(_key()).dispatch(context),
+            child: AnimatedSwitcher(
+              child: getChildOnState(),
+              duration: Duration(microseconds: 100),
+            ),
+          ),
+          // shape:,
         ),
       ),
     );

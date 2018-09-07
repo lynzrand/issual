@@ -49,3 +49,8 @@ class TodoTagNotification {
   final TodoTagNotificationState state;
   final dynamic data;
 }
+
+class CategoryColorSelectorNotification extends Notification {
+  CategoryColorSelectorNotification(this.key);
+  final String key;
+}

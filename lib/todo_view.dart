@@ -215,13 +215,18 @@ class IssualTodoEditorView extends StatefulWidget {
 
 class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
   _IssualTodoEditorViewState(this.rawTodo, this.rw) {
-    this.rawTodo['state'] ??= 'open';
-    this.rawTodo['category'] ??= TodoCategory(name: 'Todo', color: 'blue');
+    if (this.rawTodo != null) {
+      this.rawTodo['state'] ??= 'open';
+      this.rawTodo['category'] ??= TodoCategory(name: 'Todo', color: 'blue');
 
-    titleController = new TextEditingController(text: rawTodo['title'] as String);
-    categoryController =
-        new TextEditingController(text: (rawTodo['category'] as TodoCategory).name);
-    if (this.rawTodo['id'] != null)
+      titleController = new TextEditingController(text: rawTodo['title'] as String);
+      categoryController =
+          new TextEditingController(text: (rawTodo['category'] as TodoCategory).name);
+    } else {
+      titleController = new TextEditingController();
+      categoryController = new TextEditingController();
+    }
+    if (this.rawTodo != null)
       rw.getTodoById(this.rawTodo['id']).then((data) {
         setState(() {
           this.rawTodo = data.toMap();
