@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'filerw.dart';
 import 'notifications.dart';
 import 'style.dart';
@@ -131,75 +132,124 @@ class _TodoListItemState extends State<TodoListItem> {
 
   @override
   Widget build(BuildContext context) {
-    return new GestureDetector(
-      onHorizontalDragEnd: (dragDetail) {
-        if (dragDetail.primaryVelocity > 0) flipState();
-      },
-      child: InkWell(
-        splashColor: IssualColors.darkColorRipple,
-        // TODO: onTap: emit a notification up the tree!
-        onTap: () {
-          TodoStateChangeNotification(
-            id: widget.todo.id,
-            stateChange: TodoStateChangeType.view,
-            data: widget.todo.title,
-          ).dispatch(context);
+    return new Slidable(
+      key: new Key('slidableTodoItem$id'),
+      delegate: SlidableDrawerDelegate(),
+      slideToDismissDelegate: new SlideToDismissDrawerDelegate(
+        dismissThresholds: {SlideActionType.primary: -0.5, SlideActionType.secondary: 1.0},
+        onWillDismiss: (type) {
+          flipState();
+          return false;
         },
-        child: new Row(
-          children: <Widget>[
-            new IconButton(
-              icon: new Icon(
-                IssualMisc.stateIcons[state],
-                color: IssualMisc.getColorForState(context, state),
+        closeOnCanceled: true,
+      ),
+      secondaryActions: <Widget>[
+        SlideAction(
+          // color: Colors.red,
+          child: new Center(
+              child: Icon(
+            Icons.edit,
+            // color: Colors.white,
+          )),
+          onTap: () {
+            TodoEditNotification(rawTodo: widget.todo.toMap(), category: widget.todo.category)
+                .dispatch(context);
+          },
+        ),
+        SlideAction(
+          color: Colors.red,
+          child: new Center(
+              child: Icon(
+            Icons.delete,
+            color: Colors.white,
+          )),
+          onTap: () {
+            TodoStateChangeNotification(
+                id: widget.todo.id,
+                stateChange: TodoStateChangeType.remove,
+                data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
+          },
+        ),
+      ],
+      actions: <Widget>[
+        SlideAction(
+          color: Theme.of(context).primaryColor,
+          child: new Center(
+              child: Icon(
+            Icons.check,
+            color: Colors.white,
+          )),
+          onTap: () => flipState(),
+        ),
+      ],
+      child: Material(
+        color: Theme.of(context).cardColor,
+        child: InkWell(
+          splashColor: IssualColors.darkColorRipple,
+          // TODO: onTap: emit a notification up the tree!
+          onTap: () {
+            TodoStateChangeNotification(
+              id: widget.todo.id,
+              stateChange: TodoStateChangeType.view,
+              data: widget.todo.title,
+            ).dispatch(context);
+          },
+          child: new Row(
+            children: <Widget>[
+              new IconButton(
+                icon: new Icon(
+                  IssualMisc.stateIcons[state],
+                  color: IssualMisc.getColorForState(context, state),
+                ),
+                onPressed: () => flipState(),
+                tooltip: 'Flip Todo state',
               ),
-              onPressed: () => flipState(),
-              tooltip: 'Flip Todo state',
-            ),
-            new Expanded(
-              child: new Hero(
-                tag: this.widget.todo.id + 'title',
-                child: new Text(
-                  this.widget.todo.title ?? '#${this.widget.todo.id}',
-                  style: IssualMisc.getTodoTextStyle(context, state),
+              new Expanded(
+                child: new Hero(
+                  tag: this.widget.todo.id + 'title',
+                  child: new Text(
+                    this.widget.todo.title ?? '#${this.widget.todo.id}',
+                    style: IssualMisc.getTodoTextStyle(context, state),
+                  ),
                 ),
               ),
-            ),
-            // new PopupMenuButton(
-            //   icon: new Icon(Icons.more_horiz),
-            //   // itemBuilder: ,
-            //   itemBuilder: (BuildContext context) {
-            //     return [
-            //       PopupMenuItem(
-            //         value: 'remove',
-            //         child:
-            //             // new Row(children: [new Icon(Icons.delete),
-            //             Text('Remove'),
-            //         //  ]),
-            //       ),
-            //       PopupMenuItem(
-            //         value: 'edit',
-            //         child:
-            //             // new Row(children: [new Icon(Icons.edit),
-            //             new Text('Edit'),
-            //         //  ]),
-            //       )
-            //     ];
-            //   },
-            //   onSelected: (dynamic item) {
-            //     switch (item as String) {
-            //       case 'remove':
-            //         TodoStateChangeNotification(
-            //             id: widget.todo.id,
-            //             stateChange: TodoStateChangeType.remove,
-            //             data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
-            //         break;
-            //       case 'edit':
-            //         TodoEditNotification(rawTodo: widget.todo.toMap()).dispatch(context);
-            //         break;
-            //     }
-            //   },
-            // )
-          ],
+              // new PopupMenuButton(
+              //   icon: new Icon(Icons.more_horiz),
+              //   // itemBuilder: ,
+              //   itemBuilder: (BuildContext context) {
+              //     return [
+              //       PopupMenuItem(
+              //         value: 'remove',
+              //         child:
+              //             // new Row(children: [new Icon(Icons.delete),
+              //             Text('Remove'),
+              //         //  ]),
+              //       ),
+              //       PopupMenuItem(
+              //         value: 'edit',
+              //         child:
+              //             // new Row(children: [new Icon(Icons.edit),
+              //             new Text('Edit'),
+              //         //  ]),
+              //       )
+              //     ];
+              //   },
+              //   onSelected: (dynamic item) {
+              //     switch (item as String) {
+              //       case 'remove':
+              //         TodoStateChangeNotification(
+              //             id: widget.todo.id,
+              //             stateChange: TodoStateChangeType.remove,
+              //             data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
+              //         break;
+              //       case 'edit':
+              //         TodoEditNotification(rawTodo: widget.todo.toMap()).dispatch(context);
+              //         break;
+              //     }
+              //   },
+              // )
+            ],
+          ),
         ),
       ),
     );

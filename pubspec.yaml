@@ -23,6 +23,7 @@ dependencies:
   ulid: any
   flutter_markdown: any
   url_launcher: any
+  flutter_slidable: any
 
 dev_dependencies:
   flutter_test:

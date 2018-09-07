@@ -145,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
       /// REMOVE: delete this Todo item.
       case TodoStateChangeType.remove:
         setState(() {
-          displayedTodos[(t.data['todo'] as Todo).category].removeAt(t.data['index']);
+          displayedTodos[(t.data['todo'] as Todo).category.name].removeAt(t.data['index']);
         });
         _rw.removeTodo(id: t.id);
         break;
@@ -390,7 +390,7 @@ class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
 }
 
 class IssualNewCategoryColorSelector extends StatelessWidget {
-  IssualNewCategoryColorSelector(this.index, this.state) {}
+  IssualNewCategoryColorSelector(this.index, this.state);
   final index;
   final state;
   String _key() {
