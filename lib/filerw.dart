@@ -323,7 +323,7 @@ class Filerw {
     return todos;
   }
 
-  void _addTodo(Todo todo, Transaction txn) async {
+  Future<void> _addTodo(Todo todo, Transaction txn) async {
     if (todo.category != null) {
       try {
         await txn.insert(
@@ -378,15 +378,15 @@ class Filerw {
       throw ArgumentError(
           '$_filerwLogPrefix Filerw.postTodo expected todo, todoList or todoMap to present!');
 
-    await _db.transaction((txn) {
+    await _db.transaction((txn) async {
       if (todo != null) {
-        this._addTodo(todo, txn);
+        await this._addTodo(todo, txn);
       }
       if (todoList != null) {
-        for (Todo oneTodo in todoList) this._addTodo(oneTodo, txn);
+        for (Todo oneTodo in todoList) await this._addTodo(oneTodo, txn);
       }
       if (todoMap != null) {
-        for (String todoMapKey in todoMap.keys) this._addTodo(todoMap[todoMapKey], txn);
+        for (String todoMapKey in todoMap.keys) await this._addTodo(todoMap[todoMapKey], txn);
       }
       debugPrint('$_filerwLogPrefix commiting batch');
     }).catchError((e) => debugPrint(e));

@@ -10,8 +10,6 @@ import './todo_view.dart';
 import './notifications.dart';
 import './todo_widgets.dart';
 
-bool isDarkTheme = false;
-
 void main() {
   runApp(new IssualHome());
 }
@@ -21,7 +19,7 @@ class IssualHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-      title: 'Issual',
+      title: 'iL',
       theme: IssualColors.issualMainTheme,
       // theme: IssualColors.issualMainTheme,
       home: new MyHomePage(title: 'Issual'),
@@ -44,6 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
     this._rw = new Filerw();
     this._rw.init().then(this.init);
   }
+  bool isDarkTheme = false;
   Future<void> init(_) async {
     _rw.getRecentTodos().then((Map<String, List<Todo>> todosGot) {
       _rw.getCategories().then((List<TodoCategory> categories) {

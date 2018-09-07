@@ -1,4 +1,4 @@
-package com.example.issual;
+package ink.kcsl.issual;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;

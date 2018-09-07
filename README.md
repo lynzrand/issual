@@ -8,8 +8,9 @@ name "iL" does not hold any special meanings.
 iL is a Course Design work of the "Hands-on With Software Design" course in
 BUAA. Not sure if I'll continue to work on this after the course is done.
 
-This project is not tested with iOS devices, and should only be run on Android.
-If _someone_ would like to test and release an iOS version of it, PLZ DO THAT!
+This project has not been built or tested with iOS devices. Lab mice welcome!
+
+If you meet ANY issue, please post [here](https://github.com/01010101lzy/issual/issues).
 
 ## Features
 
@@ -32,6 +33,13 @@ If _someone_ would like to test and release an iOS version of it, PLZ DO THAT!
 
 ## Changelog
 
+### Beta 0.3.2 "Saika"
+
+- **YAY BETA RELEASE!**
+- Renamed package from `com.example.issual` to `ink.kcsl.issual`
+- FIXED todo not coming up after adding
+- FIXED
+
 ### Alpha 0.3.1 "Megumin"
 
 - FIXED unable to add todo inside category
@@ -42,8 +50,6 @@ If _someone_ would like to test and release an iOS version of it, PLZ DO THAT!
 - ADD category support for todos
 
 ### Older versions are not logged
-
-## Comparation with other todolists
 
 ## License
 
