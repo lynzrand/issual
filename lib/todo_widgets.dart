@@ -4,9 +4,9 @@ import 'notifications.dart';
 import 'style.dart';
 
 class TodoCard extends StatelessWidget {
-  TodoCard({Key key, this.title, this.todos, this.themeColors}) : super(key: key);
+  TodoCard({Key key, this.category, this.todos, this.themeColors}) : super(key: key);
 
-  final String title;
+  final TodoCategory category;
   final List<Todo> todos;
 
   final Map<String, dynamic> themeColors;
@@ -14,7 +14,7 @@ class TodoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      key: new Key('cardTheme#$title'),
+      key: new Key('cardTheme#${category.name}'),
       data: Theme.of(context).copyWith(
         primaryColor: themeColors['primarySwatch'],
         accentColor: themeColors['accentColor'],
@@ -23,23 +23,35 @@ class TodoCard extends StatelessWidget {
         margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: new Column(
           children: <Widget>[
-            new Padding(
-              padding: new EdgeInsets.all(16.0),
-              child: new Row(
-                children: <Widget>[
-                  new Expanded(
-                      child: new Text(
-                    '$title'.toUpperCase(),
-                    style: Theme.of(context).textTheme.title.apply(
-                          color: (themeColors['primarySwatch'] as MaterialColor).shade800,
-                        ),
-                  )),
-                  // new IconButton(
-                  //   icon: new Icon(Icons.expand_less),
-                  //   onPressed: null,
-                  // ),
-                ],
-              ),
+            new Row(
+              children: <Widget>[
+                new Expanded(
+                  child: new Container(
+                    padding: EdgeInsets.all(16.0),
+                    child: new Text(
+                      category.name.toUpperCase(),
+                      style: Theme.of(context).textTheme.title.apply(
+                            color: (themeColors['primarySwatch'] as MaterialColor).shade800,
+                          ),
+                    ),
+                  ),
+                ),
+                new IconButton(
+                  icon: Icon(Icons.add),
+                  onPressed: () =>
+                      TodoEditNotification(category: category, newTodo: true).dispatch(context),
+                ),
+                new PopupMenuButton(
+                  icon: Icon(Icons.more_vert),
+                  itemBuilder: (context) {
+                    return [
+                      PopupMenuItem(
+                        child: Text('Delete'),
+                      ),
+                    ];
+                  },
+                ),
+              ],
             ),
             new Column(
               children: List.generate(todos == null ? 1 : todos.length, (int index) {
@@ -53,19 +65,19 @@ class TodoCard extends StatelessWidget {
                   return new TodoListItem(todos[index], index, key: Key(todos[index].id));
               }),
             ),
-            new ButtonBar(
-              children: <Widget>[
-                // new IconButton(
-                //   icon: new Icon(Icons.add),
-                //   onPressed: null,
-                // )
-                new IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: () => TodoEditNotification(rawTodo: {'category': title}, newTodo: true)
-                      .dispatch(context),
-                )
-              ],
-            ),
+            // new ButtonBar(
+            //   children: <Widget>[
+            //     // new IconButton(
+            //     //   icon: new Icon(Icons.add),
+            //     //   onPressed: null,
+            //     // )
+            //     new IconButton(
+            //       icon: Icon(Icons.add),
+            //       onPressed: () => TodoEditNotification(rawTodo: {'category': title}, newTodo: true)
+            //           .dispatch(context),
+            //     )
+            //   ],
+            // ),
           ],
         ),
       ),
@@ -152,41 +164,41 @@ class _TodoListItemState extends State<TodoListItem> {
                 ),
               ),
             ),
-            new PopupMenuButton(
-              icon: new Icon(Icons.more_horiz),
-              // itemBuilder: ,
-              itemBuilder: (BuildContext context) {
-                return [
-                  PopupMenuItem(
-                    value: 'remove',
-                    child:
-                        // new Row(children: [new Icon(Icons.delete),
-                        Text('Remove'),
-                    //  ]),
-                  ),
-                  PopupMenuItem(
-                    value: 'edit',
-                    child:
-                        // new Row(children: [new Icon(Icons.edit),
-                        new Text('Edit'),
-                    //  ]),
-                  )
-                ];
-              },
-              onSelected: (dynamic item) {
-                switch (item as String) {
-                  case 'remove':
-                    TodoStateChangeNotification(
-                        id: widget.todo.id,
-                        stateChange: TodoStateChangeType.remove,
-                        data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
-                    break;
-                  case 'edit':
-                    TodoEditNotification(rawTodo: widget.todo.toMap()).dispatch(context);
-                    break;
-                }
-              },
-            )
+            // new PopupMenuButton(
+            //   icon: new Icon(Icons.more_horiz),
+            //   // itemBuilder: ,
+            //   itemBuilder: (BuildContext context) {
+            //     return [
+            //       PopupMenuItem(
+            //         value: 'remove',
+            //         child:
+            //             // new Row(children: [new Icon(Icons.delete),
+            //             Text('Remove'),
+            //         //  ]),
+            //       ),
+            //       PopupMenuItem(
+            //         value: 'edit',
+            //         child:
+            //             // new Row(children: [new Icon(Icons.edit),
+            //             new Text('Edit'),
+            //         //  ]),
+            //       )
+            //     ];
+            //   },
+            //   onSelected: (dynamic item) {
+            //     switch (item as String) {
+            //       case 'remove':
+            //         TodoStateChangeNotification(
+            //             id: widget.todo.id,
+            //             stateChange: TodoStateChangeType.remove,
+            //             data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
+            //         break;
+            //       case 'edit':
+            //         TodoEditNotification(rawTodo: widget.todo.toMap()).dispatch(context);
+            //         break;
+            //     }
+            //   },
+            // )
           ],
         ),
       ),

@@ -150,10 +150,10 @@ class _MyHomePageState extends State<MyHomePage> {
         _rw.removeTodo(id: t.id);
         break;
 
-      // /// WIPE: DANGEROUS Wipe out the whole database
-      // case TodoStateChangeType.wipe:
-      //   _rw.init(deleteCurrentDatabase: true).then(this.init);
-      //   break;
+      /// WIPE: DANGEROUS Wipe out the whole database
+      case TodoStateChangeType.wipe:
+        _rw.init(deleteCurrentDatabase: true).then(this.init);
+        break;
       default:
         break;
     }
@@ -163,7 +163,8 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.push(
       context,
       IssualTransitions.verticlaPageTransition(
-        (BuildContext context, ani1, ani2) => new IssualTodoEditorView(t.newTodo, t.rawTodo, _rw),
+        (BuildContext context, ani1, ani2) =>
+            new IssualTodoEditorView(t.newTodo, t.rawTodo, t.category, _rw),
       ),
     ).then((dynamic data) async {
       await this.init(null);
@@ -175,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return null;
     else
       return new TodoCard(
-        title: categories[index].name,
+        category: categories[index],
         todos: displayedTodos[categories[index].name],
         themeColors: IssualColors.coloredThemes[categories[index].color] ??
             IssualColors.coloredThemes['blue'],
@@ -218,7 +219,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //     )
         //   ],
         // ),
-        floatingActionButton: new IssualFAB(),
+        // floatingActionButton: new IssualFAB(),
       ),
     );
   }
@@ -329,6 +330,7 @@ class _IssualNewCategoryDialogState extends State<IssualNewCategoryDialog> {
               child: TextFormField(
                 controller: controller,
                 decoration: InputDecoration(hintText: 'Category name'),
+                textCapitalization: TextCapitalization.words,
                 autovalidate: true,
                 validator: (text) => text == "" ? 'Category name must not be empty' : null,
               ),

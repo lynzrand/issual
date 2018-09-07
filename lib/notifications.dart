@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'filerw.dart';
 
 enum TodoStateChangeType {
   flip,
@@ -20,9 +21,15 @@ class TodoStateChangeNotification extends Notification {
 }
 
 class TodoEditNotification extends Notification {
-  TodoEditNotification({this.newTodo = false, this.rawTodo});
+  TodoEditNotification({this.newTodo = false, this.rawTodo, this.category});
   bool newTodo;
   Map<String, dynamic> rawTodo;
+  // Todo todo;
+  TodoCategory category;
+  @override
+  String toString() {
+    return 'TodoEditNotification( newTodo: $newTodo, rawTodo: $rawTodo, category: $category )';
+  }
 }
 
 enum TodoCategoryChangeType {

@@ -63,7 +63,7 @@ class Todo {
     // map['tags'] = this.tags == null ? null : this.tags.join('+');
     // map['category'] = this.category;
     map['state'] = this.state;
-    // debugPrint('ToMap called on Todo $id');
+    debugPrint('ToMap called on Todo $id');
     return map;
   }
 
@@ -74,17 +74,19 @@ class Todo {
 }
 
 class TodoCategory {
-  TodoCategory({this.name, this.color, Map<String, dynamic> raw}) {
+  TodoCategory({this.name, this.color, this.id, Map<String, dynamic> raw}) {
     if (raw != null) {
+      this.id = raw['id'] as int;
       this.name = raw['name'] as String;
       this.color = raw['color'] as String;
     }
   }
   String name;
   String color;
+  int id;
 
   Map<String, dynamic> toMap() {
-    return {'name': name, 'color': color};
+    return {'name': name, 'color': color, 'id': id};
   }
 
   @override
@@ -107,8 +109,8 @@ class Filerw {
   final firstRawTodo = {
     'id': '00000000000000000000000000',
     'title': 'Hey, there!',
-    'category': 'todo',
-    'tags': 'intro',
+    // 'category': 'todo',
+    // 'tags': 'intro',
     'state': 'active',
     'desc':
         'Hi, It seems this is the first time you use iL. Go check out the [docs](https://github.com/01010101lzy/issual/blob/master/docs/readme.md) for how to use iL!'
@@ -125,7 +127,7 @@ class Filerw {
 
   Future<void> init({bool deleteCurrentDatabase = false}) async {
     // Yeah I know this is deprecated but it is the only way dude =x=
-    // await Sqflite.devSetDebugModeOn(true);
+    await Sqflite.devSetDebugModeOn(true);
 
     debugPrint(
         '$_filerwLogPrefix FileRW initialization start. ${deleteCurrentDatabase ? "DELETING CURRENT DATABASE" : ""}');
@@ -142,22 +144,22 @@ class Filerw {
       debugPrint('$_filerwLogPrefix Created a database at ${this._path}');
       await db.transaction((txn) async {
         await txn.execute(
-            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT, category TEXT NOT NULL )');
+            'CREATE TABLE $todolistTableName ( id TEXT PRIMARY KEY UNIQUE, title TEXT, state TEXT, desc TEXT, ddl INTEGER, tags TEXT )');
         await txn.execute(
-            'CREATE TABLE $categoryTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, name TEXT UNIQUE NOT NULL, color TEXT )');
+            'CREATE TABLE $categoryTableName ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, color TEXT )');
         await txn.execute(
-            'CREATE TABLE $tagsTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, tag TEXT UNIQUE NOT NULL)');
+            'CREATE TABLE $tagsTableName ( id INTEGER PRIMARY KEY AUTOINCREMENT, tag TEXT UNIQUE NOT NULL)');
         await txn.execute(
-            'CREATE TABLE $todoTagsJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, tagId INTEGER NOT NULL )');
+            'CREATE TABLE $todoTagsJoinTableName ( id INTEGER PRIMARY KEY AUTOINCREMENT, todoId TEXT NOT NULL, tagId INTEGER NOT NULL )');
         await txn.execute(
-            'CREATE TABLE $todoCategoryJoinTableName ( id INTEGER AUTO INCREMENT PRIMARY KEY, todoId TEXT NOT NULL, categoryId INTEGER NOT NULL )');
+            'CREATE TABLE $todoCategoryJoinTableName ( id INTEGER PRIMARY KEY AUTOINCREMENT, todoId TEXT NOT NULL, categoryId INTEGER NOT NULL )');
         await txn.insert(todolistTableName, firstRawTodo);
-        await txn.insert(categoryTableName, {'id': 0, 'name': 'todo', 'color': 'orange'});
-        await txn.insert(tagsTableName, {'id': 0, 'tag': 'intro'});
+        await txn.insert(categoryTableName, {'id': 1, 'name': 'todo', 'color': 'orange'});
+        await txn.insert(tagsTableName, {'id': 1, 'tag': 'intro'});
         await txn.insert(todoCategoryJoinTableName,
-            {'id': 0, 'todoId': '00000000000000000000000000', 'categoryId': 0});
+            {'id': 1, 'todoId': '00000000000000000000000000', 'categoryId': 1});
         await txn.insert(
-            todoTagsJoinTableName, {'id': 0, 'todoId': '00000000000000000000000000', 'tagId': 0});
+            todoTagsJoinTableName, {'id': 1, 'todoId': '00000000000000000000000000', 'tagId': 1});
       });
     }, onUpgrade: (Database db, int oldv, int newv) async {
       // BREAKING UPDATE FOR VERSIONS BEFORE 4
@@ -202,39 +204,48 @@ class Filerw {
     // Check initialization status
     if (!this._initialized) this._askForInitialization();
     debugPrint('$_filerwLogPrefix Getting Recent Todos');
-    String startID =
-        new Ulid(millis: DateTime.now().subtract(new Duration(days: 92)).millisecondsSinceEpoch)
-            .toCanonical()
-            .replaceRange(11, 26, '0' * 16);
-    List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
-        // Disabling limits in order to aid development
-        // where: '"id" > ? OR "state" == ? OR "state" == ?',
-        // whereArgs: [startID, 'active', 'pending'],
-        columns: ['id', 'title', 'state', 'ddl', 'tags', 'category'],
-        // limit: 90,
-        orderBy: 'id DESC');
+    // String startID =
+    //     new Ulid(millis: DateTime.now().subtract(new Duration(days: 92)).millisecondsSinceEpoch)
+    //         .toCanonical()
+    //         .replaceRange(11, 26, '0' * 16);
+    // List<Map<String, dynamic>> rawTodos = await this._db.query(todolistTableName,
+    // Disabling limits in order to aid development
+    // where: '"id" > ? OR "state" == ? OR "state" == ?',
+    // whereArgs: [startID, 'active', 'pending'],
+    // columns: ['id', 'title', 'state', 'ddl'],
+    // limit: 90,
+    // orderBy: 'id DESC');
+
+    List<Map<String, dynamic>> rawTodos = await _db.rawQuery('''
+      SELECT $todolistTableName.id, title, state, ddl, $categoryTableName.name as category
+      FROM $todolistTableName
+      JOIN $todoCategoryJoinTableName ON $todolistTableName.id == $todoCategoryJoinTableName.todoId
+      JOIN $categoryTableName ON $categoryTableName.id == $todoCategoryJoinTableName.categoryId
+    ''');
     // List<Todo> todos = rawTodos.map<Todo>((rawTodo) => new Todo(rawTodo: rawTodo));
+    debugPrint(rawTodos.toString());
     Map<String, List<Todo>> todos = {};
     for (Map<String, dynamic> todo in rawTodos) {
       if (todos[todo['category'].toString()] == null) todos[todo['category'].toString()] = [];
       todos[todo['category'].toString()].add(new Todo(rawTodo: todo));
     }
+
     // This is not the best way to do...
     // await flashCategories();
     return todos;
   }
 
   /// DANGEROUS! Wipes out the whole database.
-  @deprecated
-  Future<bool> wipeDatabase() async {
-    debugPrint('$_filerwLogPrefix WIPING OUT THE ENTIRE DATABASE!');
-    await _db.delete(todolistTableName);
-    await _db.delete(categoryTableName);
-    await _db.insert(todolistTableName, firstRawTodo);
-    await _db.insert(categoryTableName, {'category': 'todo'});
-    debugPrint('$_filerwLogPrefix SUCCESSFULLY DELETED ALL ENTRIES.');
-    return true;
-  }
+  // @deprecated
+  // Future<bool> wipeDatabase() async {
+  //   debugPrint('$_filerwLogPrefix WIPING OUT THE ENTIRE DATABASE!');
+  //   await _db.delete(todolistTableName);
+  //   await _db.delete(categoryTableName);
+  //   await _db.insert(todolistTableName, firstRawTodo);
+  //   await _db.insert(categoryTableName, {'category': 'todo'});
+  //   debugPrint('$_filerwLogPrefix SUCCESSFULLY DELETED ALL ENTRIES.');
+  //   return true;
+  // }
 
   /// Count the amount of Todos with the specific [state], in specific [category],
   /// before [beforeTime] and after [afterTime].
@@ -250,7 +261,7 @@ class Filerw {
     // With specific state
     if (state != null) query += 'state == "$state"';
     // And specific category
-    if (category != null) query += 'AND category == "$category"';
+    // if (category != null) query += 'AND category == "$category"';
     // and before some time (TIME NOT INCLUDED)
     if (beforeTime != null) {
       String beforeId = new Ulid(millis: beforeTime.microsecondsSinceEpoch)
@@ -306,11 +317,47 @@ class Filerw {
     return todos;
   }
 
-  void _addTodo(Todo todo, Batch bat) {
+  void _addTodo(Todo todo, Transaction txn) async {
     if (todo.category != null) {
-      debugPrint('$_filerwLogPrefix Adding ${todo.id} to batch');
-      bat.insert(todolistTableName, todo.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      try {
+        await txn.insert(
+          todolistTableName,
+          todo.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+        // await txn.delete(
+        //   todoCategoryJoinTableName,
+        //   where: 'todoId == ?',
+        //   whereArgs: [todo.id],
+        // );
+        await txn.insert(
+          todoCategoryJoinTableName,
+          {'todoId': todo.id, 'categoryId': todo.category.id},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      } catch (e) {
+        debugPrint(e);
+      }
     } else {
+      debugPrint('Category of Todo ${todo.id} is null!');
+      throw Exception('Category of Todo ${todo.id} is null!');
+    }
+  }
+
+  void _addTodoBatch(Todo todo, Batch bat) {
+    if (todo.category != null) {
+      try {
+        debugPrint('$_filerwLogPrefix Adding $todo to batch');
+        bat.insert(todolistTableName, todo.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        debugPrint('$_filerwLogPrefix Adding ${todo.category} to batch');
+        bat.delete(todoCategoryJoinTableName, where: 'todoId == ?', whereArgs: [todo.id]);
+        bat.insert(todoCategoryJoinTableName, {'todoId': todo.id, 'categoryId': todo.category.id});
+      } catch (e) {
+        debugPrint(e);
+      }
+    } else {
+      debugPrint('Category of Todo ${todo.id} is null!');
       throw Exception('Category of Todo ${todo.id} is null!');
     }
   }
@@ -324,20 +371,47 @@ class Filerw {
     if (todo == null && todoList == null && todoMap == null)
       throw ArgumentError(
           '$_filerwLogPrefix Filerw.postTodo expected todo, todoList or todoMap to present!');
+
+    await _db.transaction((txn) {
+      if (todo != null) {
+        this._addTodo(todo, txn);
+      }
+      if (todoList != null) {
+        for (Todo oneTodo in todoList) this._addTodo(oneTodo, txn);
+      }
+      if (todoMap != null) {
+        for (String todoMapKey in todoMap.keys) this._addTodo(todoMap[todoMapKey], txn);
+      }
+
+      debugPrint('$_filerwLogPrefix commiting batch');
+    }).catchError((e) => debugPrint(e));
+    // await flashCategories();
+  }
+
+  /// Post one or more Todos into database
+  Future<void> postTodoBatch({
+    Todo todo,
+    List<Todo> todoList,
+    Map<String, Todo> todoMap,
+  }) async {
+    if (todo == null && todoList == null && todoMap == null)
+      throw ArgumentError(
+          '$_filerwLogPrefix Filerw.postTodo expected todo, todoList or todoMap to present!');
     var bat = _db.batch();
 
     if (todo != null) {
-      this._addTodo(todo, bat);
+      this._addTodoBatch(todo, bat);
     }
     if (todoList != null) {
-      for (Todo oneTodo in todoList) this._addTodo(oneTodo, bat);
+      for (Todo oneTodo in todoList) this._addTodoBatch(oneTodo, bat);
     }
     if (todoMap != null) {
-      for (String todoMapKey in todoMap.keys) this._addTodo(todoMap[todoMapKey], bat);
+      for (String todoMapKey in todoMap.keys) this._addTodoBatch(todoMap[todoMapKey], bat);
     }
 
     debugPrint('$_filerwLogPrefix commiting batch');
-    await bat.commit(noResult: true);
+    await bat.commit();
+
     // await flashCategories();
   }
 

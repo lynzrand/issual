@@ -56,7 +56,7 @@ class _IssualTodoViewState extends State<IssualTodoView> {
       context,
       IssualTransitions.verticlaPageTransition(
         (BuildContext context, ani1, ani2) =>
-            new IssualTodoEditorView(false, mainTodo.toMap(), _rw),
+            new IssualTodoEditorView(false, mainTodo.toMap(), mainTodo.category, _rw),
       ),
     ).then((_) => this.init(id));
   }
@@ -201,41 +201,43 @@ class _IssualTodoViewState extends State<IssualTodoView> {
 }
 
 class IssualTodoEditorView extends StatefulWidget {
-  IssualTodoEditorView(this.isNew, this.rawTodo, this.rw);
+  IssualTodoEditorView(this.isNew, this.rawTodo, this.category, this.rw);
   final bool isNew;
   final Map<String, dynamic> rawTodo;
+  final TodoCategory category;
   final Filerw rw;
 
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return new _IssualTodoEditorViewState(rawTodo, rw);
+    return new _IssualTodoEditorViewState(rawTodo, category, rw);
   }
 }
 
 class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
-  _IssualTodoEditorViewState(this.rawTodo, this.rw) {
+  _IssualTodoEditorViewState(this.rawTodo, this.category, this.rw) {
     if (this.rawTodo != null) {
       this.rawTodo['state'] ??= 'open';
-      this.rawTodo['category'] ??= TodoCategory(name: 'Todo', color: 'blue');
+      // if (this.rawTodo['category'] is String) this.category= TodoCategory(name: 'Todo');
 
       titleController = new TextEditingController(text: rawTodo['title'] as String);
-      categoryController =
-          new TextEditingController(text: (rawTodo['category'] as TodoCategory).name);
-    } else {
-      titleController = new TextEditingController();
-      categoryController = new TextEditingController();
-    }
-    if (this.rawTodo != null)
+
       rw.getTodoById(this.rawTodo['id']).then((data) {
         setState(() {
           this.rawTodo = data.toMap();
           descController = new TextEditingController(text: rawTodo['desc'] as String);
         });
       });
+    } else {
+      this.rawTodo = {};
+      titleController = new TextEditingController();
+    }
+    this.rawTodo['state'] ??= 'open';
+    categoryController = new TextEditingController(text: this.category.name);
   }
 
   Map<String, dynamic> rawTodo;
+  TodoCategory category;
   Filerw rw;
 
   TextEditingController titleController;
@@ -247,6 +249,7 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
       rawTodo: rawTodo,
       isNewTodo: widget.isNew,
     );
+    todo.category = category;
     if (widget.isNew)
       await rw.postTodo(todo: todo);
     else
@@ -287,7 +290,8 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
             child: new Padding(
               padding: new EdgeInsets.symmetric(horizontal: 16.0),
               child: Hero(
-                tag: (widget.rawTodo != null ? widget.rawTodo['id'] : 'empty') + 'title',
+                tag: (widget.rawTodo != null ? (widget.rawTodo['id'] ?? 'empty') : 'empty') +
+                    'title',
                 child: new Material(
                   color: Colors.transparent,
                   child: TextField(
@@ -320,40 +324,40 @@ class _IssualTodoEditorViewState extends State<IssualTodoEditorView> {
                   border: InputBorder.none,
                   prefixText: 'iL/',
                 ),
-                onChanged: (String str) => rawTodo['category'] = str,
+                onChanged: (String str) => category.name = str,
               ),
             ),
           ),
 
           // Tags
-          new SliverToBoxAdapter(
-            child: new Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: new Wrap(
-                  spacing: 8.0,
-                  children: List.generate(
-                    // TODO: getTopTags()!
-                    5,
-                    (index) {
-                      if (index == 0)
-                        return ActionChip(
-                          label: Text('Add'),
-                          avatar: Icon(
-                            Icons.add,
-                            size: 16.0,
-                          ),
-                          onPressed: () => {},
-                        );
-                      else
-                        return FilterChip(
-                          label: Text(index.toString()),
-                          onSelected: (selected) =>
-                              debugPrint('$index has been ${selected ? '' : 'un'}selected'),
-                        );
-                    },
-                  ),
-                )),
-          ),
+          // new SliverToBoxAdapter(
+          //   child: new Container(
+          //       padding: EdgeInsets.symmetric(horizontal: 16.0),
+          //       child: new Wrap(
+          //         spacing: 8.0,
+          //         children: List.generate(
+          //           // TODO: getTopTags()!
+          //           5,
+          //           (index) {
+          //             if (index == 0)
+          //               return ActionChip(
+          //                 label: Text('Add'),
+          //                 avatar: Icon(
+          //                   Icons.add,
+          //                   size: 16.0,
+          //                 ),
+          //                 onPressed: () => {},
+          //               );
+          //             else
+          //               return FilterChip(
+          //                 label: Text(index.toString()),
+          //                 onSelected: (selected) =>
+          //                     debugPrint('$index has been ${selected ? '' : 'un'}selected'),
+          //               );
+          //           },
+          //         ),
+          //       )),
+          // ),
 
           new SliverToBoxAdapter(
             child: new Container(
