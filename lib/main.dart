@@ -10,6 +10,8 @@ import './todo_view.dart';
 import './notifications.dart';
 import './todo_widgets.dart';
 
+bool isDarkTheme = false;
+
 void main() {
   runApp(new IssualHome());
 }
@@ -21,6 +23,7 @@ class IssualHome extends StatelessWidget {
     return new MaterialApp(
       title: 'Issual',
       theme: IssualColors.issualMainTheme,
+      // theme: IssualColors.issualMainTheme,
       home: new MyHomePage(title: 'Issual'),
     );
   }
@@ -65,6 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Map<String, List<Todo>> displayedTodos = {};
   List<TodoCategory> categories = [];
 
+  // bool isDarkTheme = false;
+
   /// Handles ALL notifications bubbling up the app.
   /// TODO: Intercept some notifications midway if needed.
   bool _notificationHandler(Notification t) {
@@ -100,6 +105,10 @@ class _MyHomePageState extends State<MyHomePage> {
           debugPrint('Method for ${t.type} not implemented yet.');
           break;
       }
+    } else if (t is DebugSwitchNightModeNotificaton) {
+      setState(() {
+        isDarkTheme = !isDarkTheme;
+      });
     }
   }
 
@@ -188,38 +197,41 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return new NotificationListener(
       onNotification: _notificationHandler,
-      child: new Scaffold(
-        body: new CustomScrollView(
-          slivers: <Widget>[
-            new IssualAppBar(_rwInitialized),
-            new SliverToBoxAdapter(child: new IssualDebugInfoCard(rwInitialized: _rwInitialized)),
-            new SliverList(
-              delegate: new SliverChildBuilderDelegate(this._buildTodoCard,
-                  childCount: categories.length),
-            ),
-            new SliverToBoxAdapter(child: IssualNewCategoryButton()),
-            // new SliverFillRemaining(),
-            new SliverFillRemaining(
-              child: new Container(
-                alignment: Alignment.center,
-                padding: EdgeInsets.all(16.0),
-                // TODO: show REAL easter eggs!
-                child: new Text(
-                  'Nothing more to show (￣▽￣)"',
+      child: new AnimatedTheme(
+        data: isDarkTheme ? IssualColors.issualMainThemeDark : IssualColors.issualMainTheme,
+        child: new Scaffold(
+          body: new CustomScrollView(
+            slivers: <Widget>[
+              new IssualAppBar(_rwInitialized),
+              new SliverToBoxAdapter(child: new IssualDebugInfoCard(rwInitialized: _rwInitialized)),
+              new SliverList(
+                delegate: new SliverChildBuilderDelegate(this._buildTodoCard,
+                    childCount: categories.length),
+              ),
+              new SliverToBoxAdapter(child: IssualNewCategoryButton()),
+              // new SliverFillRemaining(),
+              new SliverFillRemaining(
+                child: new Container(
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.all(16.0),
+                  // TODO: show REAL easter eggs!
+                  child: new Text(
+                    'Nothing more to show (￣▽￣)"',
+                  ),
                 ),
               ),
-            ),
-          ],
-          controller: widget.homeScrlCtrl,
+            ],
+            controller: widget.homeScrlCtrl,
+          ),
+          // new Column(
+          //   children: <Widget>[
+          //     new TodoCard(
+          //       title: "Todos",
+          //     )
+          //   ],
+          // ),
+          // floatingActionButton: new IssualFAB(),
         ),
-        // new Column(
-        //   children: <Widget>[
-        //     new TodoCard(
-        //       title: "Todos",
-        //     )
-        //   ],
-        // ),
-        // floatingActionButton: new IssualFAB(),
       ),
     );
   }
@@ -240,7 +252,7 @@ class _IssualAppBarState extends State<IssualAppBar> {
   Widget build(BuildContext context) {
     return new SliverAppBar(
       pinned: true,
-      expandedHeight: 360.0,
+      expandedHeight: 240.0,
       title: new Text(
         'iL/all_todos',
       ),
@@ -248,10 +260,16 @@ class _IssualAppBarState extends State<IssualAppBar> {
         background: Container(
           // TODO: show real data!
           alignment: Alignment.center,
-          child: Text('=v='),
+          // child: Text('=v='),
         ),
       ),
       actions: <Widget>[
+        new IconButton(
+          icon: Icon(Icons.brightness_3),
+          onPressed: () {
+            DebugSwitchNightModeNotificaton().dispatch(context);
+          },
+        ),
         new IconButton(
           icon: Icon(Icons.search),
           onPressed: () {

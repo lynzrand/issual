@@ -127,7 +127,7 @@ class Filerw {
 
   Future<void> init({bool deleteCurrentDatabase = false}) async {
     // Yeah I know this is deprecated but it is the only way dude =x=
-    await Sqflite.devSetDebugModeOn(true);
+    // await Sqflite.devSetDebugModeOn(true);
 
     debugPrint(
         '$_filerwLogPrefix FileRW initialization start. ${deleteCurrentDatabase ? "DELETING CURRENT DATABASE" : ""}');

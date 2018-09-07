@@ -55,7 +55,8 @@ class TodoCard extends StatelessWidget {
               ],
             ),
             new Column(
-              children: List.generate(todos == null ? 1 : todos.length, (int index) {
+              children:
+                  List.generate(todos == null || todos.length == 0 ? 1 : todos.length, (int index) {
                 if (todos == null)
                   return new Container(
                     height: 96.0,

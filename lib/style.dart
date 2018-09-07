@@ -15,6 +15,17 @@ class IssualColors {
     brightness: Brightness.light,
     accentColorBrightness: Brightness.dark,
   );
+  static ThemeData issualMainThemeDark = new ThemeData(
+    primarySwatch: primary,
+    accentColor: primary.shade500,
+    primaryColor: primary.shade900,
+    // scaffoldBackgroundColor: primary.shade800,
+    scaffoldBackgroundColor: primary.shade900,
+    cardColor: Colors.black,
+    disabledColor: primary.shade600,
+    brightness: Brightness.dark,
+    accentColorBrightness: Brightness.light,
+  );
 
   /// Material Colors. Not supposed to change or delete. ONLY ADD.
   static Map<String, Map<String, dynamic>> coloredThemes = <String, Map<String, dynamic>>{

@@ -61,3 +61,5 @@ class CategoryColorSelectorNotification extends Notification {
   CategoryColorSelectorNotification(this.key);
   final String key;
 }
+
+class DebugSwitchNightModeNotificaton extends Notification {}
