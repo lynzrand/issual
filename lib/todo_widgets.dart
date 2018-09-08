@@ -64,9 +64,8 @@ class TodoCard extends StatelessWidget {
               ],
             ),
             new Column(
-              children:
-                  List.generate(todos == null || todos.length == 0 ? 1 : todos.length, (int index) {
-                if (todos == null)
+              children: List.generate(todos?.length == null ? 1 : todos.length, (int index) {
+                if (todos?.length == null)
                   return new Container(
                     height: 96.0,
                     alignment: Alignment.center,
@@ -223,41 +222,6 @@ class _TodoListItemState extends State<TodoListItem> {
                   ),
                 ),
               ),
-              // new PopupMenuButton(
-              //   icon: new Icon(Icons.more_horiz),
-              //   // itemBuilder: ,
-              //   itemBuilder: (BuildContext context) {
-              //     return [
-              //       PopupMenuItem(
-              //         value: 'remove',
-              //         child:
-              //             // new Row(children: [new Icon(Icons.delete),
-              //             Text('Remove'),
-              //         //  ]),
-              //       ),
-              //       PopupMenuItem(
-              //         value: 'edit',
-              //         child:
-              //             // new Row(children: [new Icon(Icons.edit),
-              //             new Text('Edit'),
-              //         //  ]),
-              //       )
-              //     ];
-              //   },
-              //   onSelected: (dynamic item) {
-              //     switch (item as String) {
-              //       case 'remove':
-              //         TodoStateChangeNotification(
-              //             id: widget.todo.id,
-              //             stateChange: TodoStateChangeType.remove,
-              //             data: {'todo': widget.todo, 'index': widget.index}).dispatch(context);
-              //         break;
-              //       case 'edit':
-              //         TodoEditNotification(rawTodo: widget.todo.toMap()).dispatch(context);
-              //         break;
-              //     }
-              //   },
-              // )
             ],
           ),
         ),

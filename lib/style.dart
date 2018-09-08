@@ -13,6 +13,7 @@ class IssualColors {
     primaryColor: primary.shade50,
     scaffoldBackgroundColor: primary.shade50,
     brightness: Brightness.light,
+    splashColor: primary.shade600.withOpacity(.4),
     accentColorBrightness: Brightness.dark,
   );
   static ThemeData issualMainThemeDark = new ThemeData(
@@ -24,6 +25,7 @@ class IssualColors {
     cardColor: Colors.black,
     disabledColor: primary.shade600,
     brightness: Brightness.dark,
+    splashColor: primary.shade300.withOpacity(.4),
     accentColorBrightness: Brightness.light,
   );
 
@@ -144,6 +146,22 @@ class IssualMisc {
     }
   }
 
+  static Color getColorForStateDesaturated(BuildContext context, String state) {
+    final theme = Theme.of(context);
+    switch (state) {
+      case 'closed':
+      case 'finished':
+        return theme.disabledColor;
+        break;
+      case 'open':
+      case 'active':
+      case 'pending':
+      default:
+        return theme.textTheme.body1.color;
+        break;
+    }
+  }
+
   static TextStyle getTodoTextStyle(BuildContext ctx, String state) {
     TextStyle ts;
     switch (state) {
@@ -166,22 +184,6 @@ class IssualMisc {
         break;
     }
     return Theme.of(ctx).textTheme.body1.merge(ts);
-  }
-
-  static Color getColorForStateDesaturated(BuildContext context, String state) {
-    final theme = Theme.of(context);
-    switch (state) {
-      case 'closed':
-      case 'finished':
-        return theme.disabledColor;
-        break;
-      case 'open':
-      case 'active':
-      case 'pending':
-      default:
-        return theme.textTheme.body1.color;
-        break;
-    }
   }
 
   static const stateIcons = <String, IconData>{

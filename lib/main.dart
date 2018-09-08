@@ -285,6 +285,7 @@ class _IssualAppBarState extends State<IssualAppBar> {
   }
 }
 
+@deprecated
 class IssualFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

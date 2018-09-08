@@ -226,8 +226,8 @@ class Filerw {
     debugPrint(rawTodos.toString());
     Map<String, List<Todo>> todos = {};
     for (Map<String, dynamic> todo in rawTodos) {
-      if (todos[todo['category'].toString()] == null) todos[todo['category'].toString()] = [];
-      todos[todo['category'].toString()].add(
+      if (todos[todo['category']] == null) todos[todo['category']] = [];
+      todos[todo['category']].add(
         new Todo(
           rawTodo: todo,
           category: TodoCategory(
