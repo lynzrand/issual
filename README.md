@@ -68,6 +68,6 @@ $ flutter run
 $ flutter run --release
 ```
 
-For more documentation about this freamwork see [Flutter's website](https://flutter.io).
+More documentation on this project at [docs/readme.md](https://github.com/01010101lzy/issual/blob/master/docs/readme.md).
 
-More documentation on this project at [docs/readme.md]().
+More documentation about this framework on [Flutter's Official Website](https://flutter.io).

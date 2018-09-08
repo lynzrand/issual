@@ -10,5 +10,7 @@ Please check out the following documentation for information about this project.
 
 [Devnotes (Chinese)](dev/devnotes.md), notes on development of this project.
 
+[Structures and Methods](dev/structure.md), notes on the structure, storage and methods used in this project.
+
 <!--
 [Roadmap](./dev/roadmap.md), what this project might involve in the future. -->
